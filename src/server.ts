@@ -1,7 +1,9 @@
-import { jwtVerify, setupKinde } from '@kinde-oss/kinde-node-express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import express, { Request, Response } from 'express';
+import express, { Request } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
+
 const app = express();
 const port = process.env.PORT || 8080;
 
@@ -14,19 +16,59 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 const config = {
-  clientId: process.env.KINDE_CLIENT_ID,
   issuerBaseUrl: process.env.KINDE_DOMAIN,
-  siteUrl: process.env.KINDE_SITE_URL,
-  secret: process.env.KINDE_CLIENT_SECRET,
-  redirectUrl: process.env.KINDE_SITE_URL,
 };
 
-setupKinde(config, app);
+const protectRoute = async (req, res, next) => {
+  const client = jwksClient({
+    jwksUri: `${config.issuerBaseUrl}/.well-known/jwks.json`,
+  });
+  function getKey(header, callback) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    client.getSigningKey(header.kid, function (err, key: any) {
+      const signingKey = key.publicKey || key.rsaPublicKey;
+      callback(null, signingKey);
+    });
+  }
 
-const verifier = jwtVerify(config.issuerBaseUrl);
+  const options = {
+    issuer: config.issuerBaseUrl,
+  };
 
-app.get('/api', [verifier], async (req: Request, res: Response) => {
-  // console.log('req.user', req);
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) {
+      console.error('Token not found!');
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    jwt.verify(token, getKey, options, function (err, decoded: JwtPayload) {
+      if (err) {
+        console.error('jwt.verify Error', err);
+        return res.sendStatus(401);
+      }
+      req.user = decoded['sub'];
+      req.email = decoded['email'];
+
+      next();
+    });
+  } catch (err) {
+    console.error('Token not valid!');
+    console.error(err);
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+};
+
+interface AuthenticatedRequest extends Request {
+  user?: string;
+  email?: string;
+}
+
+app.get('/api', protectRoute, async (req: AuthenticatedRequest, res) => {
+  console.log('req.user', req.user);
+  console.log('req.email', req.email);
+
   const journals = [
     {
       name: 'SP500',
