@@ -2,6 +2,7 @@ import { Response, Router } from 'express';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
+import { Paginated, Pagination } from '../model/pagination';
 
 export class JournalRoutes extends Route {
   constructor(app: Router) {
@@ -16,6 +17,7 @@ export class JournalRoutes extends Route {
   private getJournals = async (req: AuthenticatedRequest, res: Response) => {
     const journals = [
       {
+        id: '1',
         name: 'SP500',
         description: 'INDEXSP: .INX',
         currency: 'USD',
@@ -26,6 +28,7 @@ export class JournalRoutes extends Route {
         },
       },
       {
+        id: '2',
         name: 'AMEX1',
         description: 'Amsterdam journal',
         currency: 'EUR',
@@ -36,6 +39,7 @@ export class JournalRoutes extends Route {
         },
       },
       {
+        id: '3',
         name: 'WINW21',
         description: 'Bovespa journal',
         currency: 'BRL',
@@ -46,6 +50,7 @@ export class JournalRoutes extends Route {
         },
       },
     ];
-    return res.status(200).json(journals);
+    const response = new Paginated(journals, new Pagination(10, 1, 3));
+    return res.status(200).json(response);
   };
 }
