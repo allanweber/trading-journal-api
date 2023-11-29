@@ -12,7 +12,7 @@ if (process.env.NODE_ENV === 'development') {
 export default {
   port: process.env.PORT || 8080,
 
-  //   databaseURL: process.env.MONGO_HOST,
+  databaseURL: process.env.MONGODB_URI,
 
   logs: {
     level: process.env.LOG_LEVEL || 'info',

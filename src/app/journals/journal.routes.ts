@@ -1,7 +1,9 @@
 import { Response, Router } from 'express';
+import mongoClient from '../../loaders/mongodb';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
+import { getDbName } from '../../utils/database';
 import { Paginated, Pagination } from '../model/pagination';
 
 export class JournalRoutes extends Route {
@@ -15,42 +17,60 @@ export class JournalRoutes extends Route {
   };
 
   private getJournals = async (req: AuthenticatedRequest, res: Response) => {
-    const journals = [
+    const { query, currency, pageSize, page } = req.query;
+
+    const size = pageSize ? parseInt(pageSize as string) : 10;
+    const pageNumber = page ? parseInt(page as string) : 1;
+
+    let queries = {};
+    if (query) {
+      queries = { name: { $regex: query, $options: 'i' } };
+    }
+    if (currency) {
+      queries = {
+        ...queries,
+        currency: { $in: currency.toString().split(',') },
+      };
+    }
+
+    const client = await mongoClient;
+    const dbName = getDbName(req.email);
+    const COLLECTION = 'journals';
+
+    const [
       {
-        id: '1',
-        name: 'SP500',
-        description: 'INDEXSP: .INX',
-        currency: 'USD',
-        startDate: new Date('2023-01-19T00:00:00.000Z'),
-        startBalance: 10000,
-        balance: {
-          current: 12678.89,
-        },
+        total: [total = 0],
+        journals,
       },
-      {
-        id: '2',
-        name: 'AMEX1',
-        description: 'Amsterdam journal',
-        currency: 'EUR',
-        startDate: new Date('2023-03-01T00:00:00.000Z'),
-        startBalance: 9568.23,
-        balance: {
-          current: -1234.56,
+    ] = await client
+      .db(dbName)
+      .collection(COLLECTION)
+      .aggregate([
+        { $match: queries },
+        {
+          $facet: {
+            total: [{ $group: { _id: 1, count: { $sum: 1 } } }],
+            journals: [
+              { $sort: { startDate: -1 } },
+              { $skip: size * (pageNumber - 1) },
+              { $limit: size },
+            ],
+          },
         },
-      },
-      {
-        id: '3',
-        name: 'WINW21',
-        description: 'Bovespa journal',
-        currency: 'BRL',
-        startDate: new Date('2023-02-28T00:00:00.000Z'),
-        startBalance: 9568.23,
-        balance: {
-          current: 7891.45,
+        {
+          $project: {
+            total: '$total.count',
+            journals: '$journals',
+          },
         },
-      },
-    ];
-    const response = new Paginated(journals, new Pagination(10, 1, 3));
+      ])
+      .toArray();
+
+    const response = new Paginated(
+      journals,
+      new Pagination(size, pageNumber, total)
+    );
+
     return res.status(200).json(response);
   };
 }
