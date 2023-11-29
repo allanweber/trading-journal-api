@@ -1,6 +1,5 @@
 import { Response, Router } from 'express';
 import mongoClient from '../../loaders/mongodb';
-import logger from '../../logger';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
@@ -34,11 +33,8 @@ export class JournalRoutes extends Route {
       };
     }
 
-    logger.info('req.email =>' + req.email);
-
     const client = await mongoClient;
     const dbName = getDbName(req.email);
-    logger.info('dbName =>' + dbName);
     const COLLECTION = 'journals';
 
     const [
