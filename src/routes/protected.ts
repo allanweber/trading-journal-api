@@ -1,6 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import config from '../config';
+import logger from '../logger';
 
 export const protectRoute = async (req, res, next) => {
   const client = jwksClient({
@@ -21,6 +22,7 @@ export const protectRoute = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
+    logger.info('token =>' + token);
     if (!token) {
       console.error('Token not found!');
       return res.status(401).json({ message: 'Unauthorized' });
@@ -31,6 +33,7 @@ export const protectRoute = async (req, res, next) => {
         console.error('jwt.verify Error', err);
         return res.sendStatus(401);
       }
+      logger.info('decoded =>' + JSON.stringify(decoded));
       req.user = decoded['sub'];
       req.email = decoded['email'];
 
