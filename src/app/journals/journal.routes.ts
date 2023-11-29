@@ -34,9 +34,10 @@ export class JournalRoutes extends Route {
       };
     }
 
+    logger.info('req.email =>' + req.email);
+
     const client = await mongoClient;
     const dbName = getDbName(req.email);
-    logger.info('req.email =>' + req.email);
     logger.info('dbName =>' + dbName);
     const COLLECTION = 'journals';
 
