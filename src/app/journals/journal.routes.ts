@@ -35,6 +35,8 @@ export class JournalRoutes extends Route {
 
     const client = await mongoClient;
     const dbName = getDbName(req.email);
+    console.log('req.email', req.email);
+    console.log('dbName', dbName);
     const COLLECTION = 'journals';
 
     const [
