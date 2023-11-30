@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
 import { getDbName } from '../../utils/database';
 import { Paginated, Pagination } from '../model/pagination';
@@ -55,4 +56,16 @@ export const queryJournals = async (
     .toArray();
 
   return new Paginated(journals, new Pagination(pageSize, page, total));
+};
+
+export const getJournal = async (userEmail: string, id: string) => {
+  const client = await mongoClient;
+  const dbName = getDbName(userEmail);
+
+  const journal = await client
+    .db(dbName)
+    .collection(COLLECTION)
+    .findOne({ _id: new ObjectId(id) });
+
+  return journal;
 };
