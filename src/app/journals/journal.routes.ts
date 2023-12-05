@@ -2,7 +2,13 @@ import { Response, Router } from 'express';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
-import { getJournal, queryJournals } from './journal.service';
+import { journalSchema } from '../model/journal';
+import {
+  deleteJournal,
+  getJournal,
+  queryJournals,
+  saveJournal,
+} from './journal.service';
 
 export class JournalRoutes extends Route {
   constructor(app: Router) {
@@ -13,6 +19,8 @@ export class JournalRoutes extends Route {
   public registerRoutes = (): void => {
     this.route.get('/', [protectRoute], this.getJournals);
     this.route.get('/:id', [protectRoute], this.getJournal);
+    this.route.post('/', [protectRoute], this.createJournal);
+    this.route.delete('/:id', [protectRoute], this.deleteJournal);
   };
 
   private getJournals = async (req: AuthenticatedRequest, res: Response) => {
@@ -43,5 +51,32 @@ export class JournalRoutes extends Route {
     }
 
     return res.status(200).json(journal);
+  };
+
+  private createJournal = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { body } = req;
+      const parse = journalSchema.safeParse(body);
+      if (parse.success === false) {
+        return res.status(400).json({ message: parse.error.message });
+      }
+      const response = await saveJournal(req.email, parse.data);
+      return res.status(200).json(response);
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
+  private deleteJournal = async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const journal = await getJournal(req.email, id);
+
+    if (!journal) {
+      return res.status(404).json({ message: 'Journal not found' });
+    }
+
+    await deleteJournal(req.email, id);
+
+    return res.status(200).json(id);
   };
 }
