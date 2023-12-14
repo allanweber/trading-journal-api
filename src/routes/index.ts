@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { JournalRoutes } from '../app/journals/journal.routes';
+import { EntriesRoutes } from '../app/entries/entries.routes';
+import { JournalsRoutes } from '../app/journals/journals.routes';
 
 export default () => {
   const app = Router();
-  new JournalRoutes(app);
+  new JournalsRoutes(app);
+  new EntriesRoutes(app);
   return app;
 };

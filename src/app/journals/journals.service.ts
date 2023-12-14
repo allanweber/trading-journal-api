@@ -108,3 +108,17 @@ export const deleteJournal = async (userEmail: string, id: string) => {
 
   return result;
 };
+
+export const getAllJournals = async (userEmail: string) => {
+  const client = await mongoClient;
+  const dbName = getDbName(userEmail);
+
+  const journals = await client
+    .db(dbName)
+    .collection(COLLECTION)
+    .find()
+    .project({ name: 1, description: 1, currency: 1 })
+    .toArray();
+
+  return journals;
+};

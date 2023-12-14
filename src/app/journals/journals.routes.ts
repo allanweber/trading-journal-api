@@ -5,12 +5,13 @@ import { Route } from '../../routes/route';
 import { journalSchema } from '../model/journal';
 import {
   deleteJournal,
+  getAllJournals,
   getJournal,
   queryJournals,
   saveJournal,
-} from './journal.service';
+} from './journals.service';
 
-export class JournalRoutes extends Route {
+export class JournalsRoutes extends Route {
   constructor(app: Router) {
     super(app, 'journals');
     this.registerRoutes();
@@ -18,8 +19,9 @@ export class JournalRoutes extends Route {
 
   public registerRoutes = (): void => {
     this.route.get('/', [protectRoute], this.getJournals);
+    this.route.get('/all', [protectRoute], this.getAllJournals);
     this.route.get('/:id', [protectRoute], this.getJournal);
-    this.route.post('/', [protectRoute], this.createJournal);
+    this.route.post('/', [protectRoute], this.saveJournal);
     this.route.delete('/:id', [protectRoute], this.deleteJournal);
   };
 
@@ -53,7 +55,7 @@ export class JournalRoutes extends Route {
     return res.status(200).json(journal);
   };
 
-  private createJournal = async (req: AuthenticatedRequest, res: Response) => {
+  private saveJournal = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { body } = req;
       const parse = journalSchema.safeParse(body);
@@ -61,7 +63,7 @@ export class JournalRoutes extends Route {
         return res.status(400).json({ message: parse.error.message });
       }
       const response = await saveJournal(req.email, parse.data);
-      return res.status(200).json(response);
+      return res.status(parse.data._id ? 200 : 201).json(response);
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
@@ -78,5 +80,11 @@ export class JournalRoutes extends Route {
     await deleteJournal(req.email, id);
 
     return res.status(200).json(id);
+  };
+
+  private getAllJournals = async (req: AuthenticatedRequest, res: Response) => {
+    const journals = await getAllJournals(req.email);
+
+    return res.status(200).json(journals);
   };
 }
