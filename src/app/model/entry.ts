@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Direction } from './direction';
 import { EntryType } from './entryType';
+import { journalSchema } from './journal';
 
 export const tradeSchema = z
   .object({
@@ -267,6 +268,7 @@ export const entrySchema = z.object({
     .positive({ message: 'costs-positive' })
     .max(9999999999, { message: 'costs-max' })
     .nullish(),
+  journal: journalSchema,
 });
 
 export type Trade = z.infer<typeof tradeSchema>;

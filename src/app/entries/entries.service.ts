@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
 import { getDbName } from '../../utils/database';
-import { getJournal } from '../journals/journals.service';
+import { getJournal, getJournalData } from '../journals/journals.service';
 import {
   Deposit,
   Dividend,
@@ -79,7 +79,17 @@ export const queryEntries = async (
     ])
     .toArray();
 
-  return new Paginated(entries, new Pagination(pageSize, page, total));
+  const entriesWithJournal = await Promise.all(
+    entries.map(async (entry) => {
+      const journal = await getJournalData(userEmail, entry.journalId);
+      return { ...entry, journal: journal };
+    })
+  );
+
+  return new Paginated(
+    entriesWithJournal,
+    new Pagination(pageSize, page, total)
+  );
 };
 
 export const getEntry = async (userEmail: string, id: string) => {

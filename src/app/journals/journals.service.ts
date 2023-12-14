@@ -122,3 +122,17 @@ export const getAllJournals = async (userEmail: string) => {
 
   return journals;
 };
+
+export const getJournalData = async (userEmail: string, id: string) => {
+  const client = await mongoClient;
+  const dbName = getDbName(userEmail);
+
+  const options = { projection: { name: 1, currency: 1 } };
+
+  const journal = await client
+    .db(dbName)
+    .collection(COLLECTION)
+    .findOne({ _id: new ObjectId(id) }, options);
+
+  return journal;
+};
