@@ -30,7 +30,7 @@ export const queryEntries = async (
 ) => {
   let queries = {};
   if (query) {
-    queries = { name: { $regex: query, $options: 'i' } };
+    queries = { symbol: { $regex: query, $options: 'i' } };
   }
   if (journals) {
     queries = {
