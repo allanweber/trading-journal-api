@@ -268,7 +268,7 @@ export const entrySchema = z.object({
     .positive({ message: 'costs-positive' })
     .max(9999999999, { message: 'costs-max' })
     .nullish(),
-  journal: journalSchema,
+  journal: journalSchema.optional(),
 });
 
 export type Trade = z.infer<typeof tradeSchema>;

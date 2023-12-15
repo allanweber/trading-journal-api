@@ -64,24 +64,18 @@ export class EntriesRoutes extends Route {
 
   private getEntry = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    const entry = {};
+
+    const entry = await getEntry(req.email, id);
 
     if (!entry) {
       return res.status(404).json({ message: 'Entry not found' });
     }
 
-    const response = getEntry(req.email, id);
-
-    return res.status(200).json(response);
+    return res.status(200).json(entry);
   };
 
   private deleteEntry = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    const entry = {};
-
-    if (!entry) {
-      return res.status(404).json({ message: 'Entry not found' });
-    }
 
     await deleteEntry(req.email, id);
 

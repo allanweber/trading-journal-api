@@ -71,11 +71,6 @@ export class JournalsRoutes extends Route {
 
   private deleteJournal = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
-    const journal = await getJournal(req.email, id);
-
-    if (!journal) {
-      return res.status(404).json({ message: 'Journal not found' });
-    }
 
     await deleteJournal(req.email, id);
 

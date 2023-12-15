@@ -8,7 +8,11 @@ import {
   Taxes,
   Trade,
   Withdrawal,
+  depositSchema,
+  dividendSchema,
   entrySchema,
+  taxesSchema,
+  tradeSchema,
 } from '../model/entry';
 import { Paginated, Pagination } from '../model/pagination';
 import { balance } from './balance.service';
@@ -31,7 +35,7 @@ export const queryEntries = async (
   if (journals) {
     queries = {
       ...queries,
-      journal: { $in: journals },
+      journalId: { $in: journals },
     };
   }
   if (entryType) {
@@ -101,6 +105,8 @@ export const getEntry = async (userEmail: string, id: string) => {
     .collection(COLLECTION)
     .findOne({ _id: new ObjectId(id) });
 
+  const journal = await getJournalData(userEmail, entry.journalId);
+  entry.journal = journal;
   return entry;
 };
 
@@ -117,65 +123,20 @@ export const deleteEntry = async (userEmail: string, id: string) => {
 };
 
 export const saveDeposit = async (userEmail: string, deposit: Deposit) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const entry = await balance(entrySchema.parse(deposit));
-
-  const { _id, ...record } = entry;
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: { ...record } },
-      { upsert: true }
-    )
-    .then(() => record);
-
+  const entry = depositSchema.parse(deposit);
+  const result = saveEntry(userEmail, entry);
   return result;
 };
 
 export const saveDividend = async (userEmail: string, dividend: Dividend) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const entry = await balance(entrySchema.parse(dividend));
-
-  const { _id, ...record } = entry;
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: { ...record } },
-      { upsert: true }
-    )
-    .then(() => record);
-
+  const entry = dividendSchema.parse(dividend);
+  const result = saveEntry(userEmail, entry);
   return result;
 };
 
-export const saveTax = async (userEmail: string, tax: Taxes) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const entry = await balance(entrySchema.parse(tax));
-
-  const { _id, ...record } = entry;
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: { ...record } },
-      { upsert: true }
-    )
-    .then(() => record);
-
+export const saveTax = async (userEmail: string, taxes: Taxes) => {
+  const entry = taxesSchema.parse(taxes);
+  const result = saveEntry(userEmail, entry);
   return result;
 };
 
@@ -183,31 +144,14 @@ export const saveWithdrawal = async (
   userEmail: string,
   withdrawal: Withdrawal
 ) => {
-  const entry = await balance(entrySchema.parse(withdrawal));
-
+  const entry = entrySchema.parse(withdrawal);
   const result = saveEntry(userEmail, entry);
-
   return result;
 };
 
 export const saveTrade = async (userEmail: string, trade: Trade) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const entry = await balance(entrySchema.parse(trade));
-
-  const { _id, ...record } = entry;
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: { ...record } },
-      { upsert: true }
-    )
-    .then(() => record);
-
+  const entry = tradeSchema.parse(trade);
+  const result = saveEntry(userEmail, entry);
   return result;
 };
 
@@ -218,13 +162,14 @@ const saveEntry = async (
   const client = await mongoClient;
   const dbName = getDbName(userEmail);
 
-  const { _id, ...record } = entry;
-
   const journal = await getJournal(userEmail, entry.journalId);
 
   if (!journal) {
     throw new Error(`Journal id ${entry.journalId} does not exist.`);
   }
+
+  const balancedEntry = await balance(entry);
+  const { _id, ...record } = balancedEntry;
 
   const result = await client
     .db(dbName)
