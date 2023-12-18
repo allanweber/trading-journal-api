@@ -72,13 +72,29 @@ export const tradeSchema = z
       .max(9999999999, { message: 'costs-max' })
       .nullish(),
   })
-  .superRefine(({ date, exitDate }, context) => {
+  .superRefine(({ date, exitDate, exitPrice }, context) => {
     if (exitDate && exitDate < date) {
       return context.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'exit-date-after-date',
         path: ['exitDate'],
       });
+    }
+    if (exitDate || exitPrice) {
+      if (!exitDate) {
+        return context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'exit-date-required',
+          path: ['exitDate'],
+        });
+      }
+      if (!exitPrice) {
+        return context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'exit-price-required',
+          path: ['exitPrice'],
+        });
+      }
     }
   });
 
