@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
 import { getDbName } from '../../utils/database';
-import { Journal } from '../model/journal';
+import { Balance, Journal } from '../model/journal';
 import { Paginated, Pagination } from '../model/pagination';
 
 const COLLECTION = 'journals';
@@ -135,4 +135,21 @@ export const getJournalData = async (userEmail: string, id: string) => {
     .findOne({ _id: new ObjectId(id) }, options);
 
   return journal;
+};
+
+export const getJournalBalance = async (
+  userEmail: string,
+  id: string
+): Promise<Balance> => {
+  const client = await mongoClient;
+  const dbName = getDbName(userEmail);
+
+  const options = { projection: { balance: 1 } };
+
+  const journal = await client
+    .db(dbName)
+    .collection(COLLECTION)
+    .findOne({ _id: new ObjectId(id) }, options);
+
+  return journal.balance;
 };

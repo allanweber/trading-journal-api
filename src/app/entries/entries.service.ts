@@ -1,7 +1,10 @@
 import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
 import { getDbName } from '../../utils/database';
-import { getJournal, getJournalData } from '../journals/journals.service';
+import {
+  getJournalBalance,
+  getJournalData,
+} from '../journals/journals.service';
 import {
   Deposit,
   Dividend,
@@ -15,7 +18,7 @@ import {
   tradeSchema,
 } from '../model/entry';
 import { Paginated, Pagination } from '../model/pagination';
-import { balance } from './balance.service';
+import { balanceEntry } from './balance.service';
 
 const COLLECTION = 'entries';
 
@@ -162,13 +165,13 @@ const saveEntry = async (
   const client = await mongoClient;
   const dbName = getDbName(userEmail);
 
-  const journal = await getJournal(userEmail, entry.journalId);
+  const balance = await getJournalBalance(userEmail, entry.journalId);
 
-  if (!journal) {
+  if (!balance) {
     throw new Error(`Journal id ${entry.journalId} does not exist.`);
   }
 
-  const balancedEntry = await balance(entry);
+  const balancedEntry = await balanceEntry(entry, balance);
   const { _id, ...record } = balancedEntry;
 
   const result = await client

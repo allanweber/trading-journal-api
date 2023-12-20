@@ -284,6 +284,8 @@ export const entrySchema = z.object({
     .positive({ message: 'costs-positive' })
     .max(9999999999, { message: 'costs-max' })
     .nullish(),
+  grossResult: z.number().nullish(),
+  accountChange: z.number().nullish(),
   journal: journalSchema.optional(),
 });
 
