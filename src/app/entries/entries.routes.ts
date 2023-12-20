@@ -1,4 +1,5 @@
 import { Response, Router } from 'express';
+import logger from '../../logger';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
@@ -9,15 +10,12 @@ import {
   tradeSchema,
   withdrawalSchema,
 } from '../model/entry';
+import { EntryType } from '../model/entryType';
 import {
   deleteEntry,
   getEntry,
   queryEntries,
-  saveDeposit,
-  saveDividend,
-  saveTax,
-  saveTrade,
-  saveWithdrawal,
+  saveEntry,
 } from './entries.service';
 
 export class EntriesRoutes extends Route {
@@ -30,11 +28,7 @@ export class EntriesRoutes extends Route {
     this.route.get('/', [protectRoute], this.getEntries);
     this.route.get('/:id', [protectRoute], this.getEntry);
     this.route.delete('/:id', [protectRoute], this.deleteEntry);
-    this.route.post('/deposits', [protectRoute], this.saveDeposit);
-    this.route.post('/dividends', [protectRoute], this.saveDividend);
-    this.route.post('/taxes', [protectRoute], this.saveTax);
-    this.route.post('/withdrawals', [protectRoute], this.saveWithdrawal);
-    this.route.post('/trades', [protectRoute], this.saveTrade);
+    this.route.post('/', [protectRoute], this.saveEntry);
   };
 
   private getEntries = async (req: AuthenticatedRequest, res: Response) => {
@@ -82,79 +76,38 @@ export class EntriesRoutes extends Route {
     return res.status(200).json(id);
   };
 
-  private saveDeposit = async (req: AuthenticatedRequest, res: Response) => {
+  private saveEntry = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { body } = req;
-      const parse = depositSchema.safeParse(body);
+
+      let parse = undefined;
+      switch (body.entryType) {
+        case EntryType.Deposit:
+          parse = depositSchema.safeParse(body);
+          break;
+        case EntryType.Dividend:
+          parse = dividendSchema.safeParse(body);
+          break;
+        case EntryType.Taxes:
+          parse = taxesSchema.safeParse(body);
+          break;
+        case EntryType.Withdrawal:
+          parse = withdrawalSchema.safeParse(body);
+          break;
+        case EntryType.Trade:
+          parse = tradeSchema.safeParse(body);
+          break;
+        default:
+          return res.status(400).json({ message: 'Invalid entry type' });
+      }
+
       if (parse.success === false) {
         return res.status(400).json({ message: parse.error.message });
       }
 
-      const response = await saveDeposit(req.email, body);
+      logger.info(`Saving entry for user ${JSON.stringify(parse.data)}`);
 
-      return res.status(parse.data._id ? 200 : 201).json(response);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  };
-
-  private saveDividend = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { body } = req;
-      const parse = dividendSchema.safeParse(body);
-      if (parse.success === false) {
-        return res.status(400).json({ message: parse.error.message });
-      }
-
-      const response = await saveDividend(req.email, body);
-
-      return res.status(parse.data._id ? 200 : 201).json(response);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  };
-
-  private saveTax = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { body } = req;
-      const parse = taxesSchema.safeParse(body);
-      if (parse.success === false) {
-        return res.status(400).json({ message: parse.error.message });
-      }
-
-      const response = await saveTax(req.email, body);
-
-      return res.status(parse.data._id ? 200 : 201).json(response);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  };
-
-  private saveWithdrawal = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { body } = req;
-      const parse = withdrawalSchema.safeParse(body);
-      if (parse.success === false) {
-        return res.status(400).json({ message: parse.error.message });
-      }
-
-      const response = await saveWithdrawal(req.email, body);
-
-      return res.status(parse.data._id ? 200 : 201).json(response);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
-  };
-
-  private saveTrade = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { body } = req;
-      const parse = tradeSchema.safeParse(body);
-      if (parse.success === false) {
-        return res.status(400).json({ message: parse.error.message });
-      }
-
-      const response = await saveTrade(req.email, body);
+      const response = await saveEntry(req.email, parse.data);
 
       return res.status(parse.data._id ? 200 : 201).json(response);
     } catch (error) {

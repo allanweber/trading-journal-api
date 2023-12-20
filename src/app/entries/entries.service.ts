@@ -5,18 +5,7 @@ import {
   getJournalBalance,
   getJournalData,
 } from '../journals/journals.service';
-import {
-  Deposit,
-  Dividend,
-  Taxes,
-  Trade,
-  Withdrawal,
-  depositSchema,
-  dividendSchema,
-  entrySchema,
-  taxesSchema,
-  tradeSchema,
-} from '../model/entry';
+import { Deposit, Dividend, Taxes, Trade, Withdrawal } from '../model/entry';
 import { Paginated, Pagination } from '../model/pagination';
 import { balanceEntry } from './balance.service';
 
@@ -125,40 +114,7 @@ export const deleteEntry = async (userEmail: string, id: string) => {
   return entry;
 };
 
-export const saveDeposit = async (userEmail: string, deposit: Deposit) => {
-  const entry = depositSchema.parse(deposit);
-  const result = saveEntry(userEmail, entry);
-  return result;
-};
-
-export const saveDividend = async (userEmail: string, dividend: Dividend) => {
-  const entry = dividendSchema.parse(dividend);
-  const result = saveEntry(userEmail, entry);
-  return result;
-};
-
-export const saveTax = async (userEmail: string, taxes: Taxes) => {
-  const entry = taxesSchema.parse(taxes);
-  const result = saveEntry(userEmail, entry);
-  return result;
-};
-
-export const saveWithdrawal = async (
-  userEmail: string,
-  withdrawal: Withdrawal
-) => {
-  const entry = entrySchema.parse(withdrawal);
-  const result = saveEntry(userEmail, entry);
-  return result;
-};
-
-export const saveTrade = async (userEmail: string, trade: Trade) => {
-  const entry = tradeSchema.parse(trade);
-  const result = saveEntry(userEmail, entry);
-  return result;
-};
-
-const saveEntry = async (
+export const saveEntry = async (
   userEmail: string,
   entry: Trade | Deposit | Taxes | Dividend | Withdrawal
 ) => {
