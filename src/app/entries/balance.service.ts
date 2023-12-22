@@ -5,7 +5,7 @@ import { Balance } from '../model/journal';
 
 export const balanceEntry = async (entry: Entry, balance: Balance) => {
   if (entry.entryType === EntryType.Trade) {
-    entry = balanceTrade(entry);
+    entry = balanceTrade(entry, balance);
   } else {
     entry.grossResult = entry.price;
     if (entry.entryType === EntryType.Deposit) {
@@ -37,12 +37,16 @@ export const balanceEntry = async (entry: Entry, balance: Balance) => {
     entry.accountChange = accountChange;
   }
 
-  //TODO:accountBalance
+  if (entry.result) {
+    entry.accountBalance = parseFloat(
+      (balance.current + entry.result).toFixed(2)
+    );
+  }
 
   return entry;
 };
 
-const balanceTrade = (entry: Entry): Entry => {
+const balanceTrade = (entry: Entry, balance: Balance): Entry => {
   if (isTradeClosing(entry)) {
     if (entry.direction === Direction.Long) {
       const result = parseFloat(
@@ -61,7 +65,22 @@ const balanceTrade = (entry: Entry): Entry => {
 
   //TODO:RR
 
-  //TODO:account Risked
+  if (entry.loss) {
+    let accountRisk = undefined;
+    if (entry.direction === Direction.Long) {
+      accountRisk = parseFloat(
+        (((entry.price - entry.loss) * entry.size) / balance.current).toFixed(4)
+      );
+    } else {
+      accountRisk = parseFloat(
+        (((entry.loss - entry.price) * entry.size) / balance.current).toFixed(4)
+      );
+    }
+    if (accountRisk < 0) {
+      accountRisk = accountRisk * -1;
+    }
+    entry.accountRisk = accountRisk;
+  }
 
   return entry;
 };

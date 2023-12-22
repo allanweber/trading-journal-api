@@ -1,11 +1,19 @@
 import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
+import logger from '../../logger';
 import { getDbName } from '../../utils/database';
 import {
   getJournalBalance,
   getJournalData,
 } from '../journals/journals.service';
-import { Deposit, Dividend, Taxes, Trade, Withdrawal } from '../model/entry';
+import {
+  Deposit,
+  Dividend,
+  Taxes,
+  Trade,
+  Withdrawal,
+  entrySchema,
+} from '../model/entry';
 import { Paginated, Pagination } from '../model/pagination';
 import { balanceEntry } from './balance.service';
 
@@ -127,18 +135,29 @@ export const saveEntry = async (
     throw new Error(`Journal id ${entry.journalId} does not exist.`);
   }
 
-  const balancedEntry = await balanceEntry(entry, balance);
+  const parsedEntry = entrySchema.parse(entry);
+  const balancedEntry = await balanceEntry(parsedEntry, balance);
+  // if(balanceEntry.exitDate) {
+
+  // }
+
   const { _id, ...record } = balancedEntry;
 
   const result = await client
     .db(dbName)
     .collection(COLLECTION)
-    .updateOne(
+    .findOneAndUpdate(
       { _id: new ObjectId(_id) },
-      { $set: { ...record } },
-      { upsert: true }
-    )
-    .then(() => record);
+      { $setOnInsert: { ...record } },
+      { upsert: true, ignoreUndefined: false }
+    );
+  // .updateOne(
+  //   { _id: new ObjectId(_id) },
+  //   { $set: { ...record } },
+  //   { upsert: true, ignoreUndefined: false }
+  // );
+
+  logger.info(`Saved entry ${JSON.stringify(result)}`);
 
   return result;
 };

@@ -21,7 +21,6 @@ export const tradeSchema = z
       })
       .positive({ message: 'price-positive' })
       .max(9999999999, { message: 'price-max' }),
-
     entryType: z.nativeEnum(EntryType, {
       required_error: 'entry-type-required',
     }),
@@ -30,7 +29,7 @@ export const tradeSchema = z
       .max(100, {
         message: 'description-max',
       })
-      .nullish(),
+      .optional(),
     symbol: z
       .string({
         required_error: 'symbol-required',
@@ -39,7 +38,6 @@ export const tradeSchema = z
       .max(30, {
         message: 'symbol-max',
       }),
-
     direction: z.nativeEnum(Direction, {
       required_error: 'direction-required',
     }),
@@ -54,23 +52,23 @@ export const tradeSchema = z
       .number()
       .positive({ message: 'profit-positive' })
       .max(9999999999, { message: 'profit-max' })
-      .nullish(),
+      .optional(),
     loss: z
       .number()
       .positive({ message: 'loss-positive' })
       .max(9999999999, { message: 'loss-max' })
-      .nullish(),
-    exitDate: z.coerce.date().nullish(),
+      .optional(),
+    exitDate: z.coerce.date().optional(),
     exitPrice: z
       .number()
       .positive({ message: 'exitPrice-positive' })
       .max(9999999999, { message: 'exitPrice-max' })
-      .nullish(),
+      .optional(),
     costs: z
       .number()
       .positive({ message: 'costs-positive' })
       .max(9999999999, { message: 'costs-max' })
-      .nullish(),
+      .optional(),
   })
   .superRefine(({ date, exitDate, exitPrice }, context) => {
     if (exitDate && exitDate < date) {
@@ -125,7 +123,7 @@ export const depositSchema = z.object({
     .max(100, {
       message: 'description-max',
     })
-    .nullish(),
+    .optional(),
 });
 
 export const withdrawalSchema = z.object({
@@ -154,7 +152,7 @@ export const withdrawalSchema = z.object({
     .max(100, {
       message: 'description-max',
     })
-    .nullish(),
+    .optional(),
 });
 
 export const taxesSchema = z.object({
@@ -183,7 +181,7 @@ export const taxesSchema = z.object({
     .max(100, {
       message: 'description-max',
     })
-    .nullish(),
+    .optional(),
 });
 
 export const dividendSchema = z.object({
@@ -212,7 +210,7 @@ export const dividendSchema = z.object({
     .max(100, {
       message: 'description-max',
     })
-    .nullish(),
+    .optional(),
   symbol: z
     .string({
       required_error: 'symbol-required',
@@ -246,7 +244,7 @@ export const entrySchema = z.object({
       invalid_type_error: 'price-positive',
     })
     .max(9999999999, { message: 'price-max' })
-    .nullish(),
+    .optional(),
   entryType: z.nativeEnum(EntryType, {
     required_error: 'entry-type-required',
   }),
@@ -255,37 +253,39 @@ export const entrySchema = z.object({
     .max(100, {
       message: 'description-max',
     })
-    .nullish(),
-  symbol: z.string().nullish(),
-  direction: z.nativeEnum(Direction).nullish(),
+    .optional(),
+  symbol: z.string().optional(),
+  direction: z.nativeEnum(Direction).optional(),
   size: z
     .number()
     .positive({ message: 'size-positive' })
     .max(9999999999, { message: 'size-max' })
-    .nullish(),
+    .optional(),
   profit: z
     .number()
     .positive({ message: 'profit-positive' })
     .max(9999999999, { message: 'profit-max' })
-    .nullish(),
+    .optional(),
   loss: z
     .number()
     .positive({ message: 'loss-positive' })
     .max(9999999999, { message: 'loss-max' })
-    .nullish(),
-  exitDate: z.coerce.date().nullish(),
+    .optional(),
+  exitDate: z.coerce.date().optional(),
   exitPrice: z
     .number()
     .positive({ message: 'exitPrice-positive' })
     .max(9999999999, { message: 'exitPrice-max' })
-    .nullish(),
+    .optional(),
   costs: z
     .number()
     .positive({ message: 'costs-positive' })
     .max(9999999999, { message: 'costs-max' })
-    .nullish(),
-  grossResult: z.number().nullish(),
-  accountChange: z.number().nullish(),
+    .optional(),
+  grossResult: z.number().optional(),
+  accountChange: z.number().optional(),
+  accountBalance: z.number().optional(),
+  accountRisk: z.number().optional(),
   journal: journalSchema.optional(),
 });
 

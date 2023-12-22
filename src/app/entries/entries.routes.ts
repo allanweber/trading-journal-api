@@ -1,5 +1,4 @@
 import { Response, Router } from 'express';
-import logger from '../../logger';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
@@ -104,8 +103,6 @@ export class EntriesRoutes extends Route {
       if (parse.success === false) {
         return res.status(400).json({ message: parse.error.message });
       }
-
-      logger.info(`Saving entry for user ${JSON.stringify(parse.data)}`);
 
       const response = await saveEntry(req.email, parse.data);
 

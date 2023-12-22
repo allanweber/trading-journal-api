@@ -1,16 +1,10 @@
 import express from 'express';
-import morgan from 'morgan';
 import config from './config';
 import loaders from './loaders';
 import logger from './logger';
 
 async function startServer() {
   const app = express();
-  app.use(
-    morgan(
-      ':date[iso] :remote-addr [:method:url] :status :res[content-length] bytes - :response-time ms [:user-agent]'
-    )
-  );
   await loaders(app);
 
   app
