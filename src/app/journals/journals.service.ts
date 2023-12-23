@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
+import { prismaClient } from '../../loaders/prisma';
+import logger from '../../logger';
 import { getDbName } from '../../utils/database';
 import { Balance, Journal } from '../model/journal';
 import { Paginated, Pagination } from '../model/pagination';
@@ -83,6 +85,20 @@ export const saveJournal = async (userEmail: string, journal: Journal) => {
     const currentJournal = await getJournal(userEmail, _id);
     record.balance = currentJournal.balance;
   }
+
+  await prismaClient.journal.create({
+    data: {
+      name: record.name,
+      description: record.description,
+      startDate: record.startDate,
+      startBalance: record.startBalance,
+      currency: record.currency,
+      currentBalance: record.startBalance,
+    },
+  });
+
+  const journalsQuery = await prismaClient.journal.findMany({});
+  logger.info(JSON.stringify(journalsQuery, null, 2));
 
   const result = await client
     .db(dbName)
