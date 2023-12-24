@@ -9,3 +9,7 @@
 ### Generate Prisma Client
 
 `npx prisma generate`
+
+### Studio
+
+`npx prisma studio`

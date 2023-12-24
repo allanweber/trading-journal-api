@@ -2,10 +2,7 @@ import { ObjectId } from 'mongodb';
 import mongoClient from '../../loaders/mongodb';
 import logger from '../../logger';
 import { getDbName } from '../../utils/database';
-import {
-  getJournalBalance,
-  getJournalData,
-} from '../journals/journals.service';
+import { getJournalBalance } from '../journals/journals.service';
 import {
   Deposit,
   Dividend,
@@ -83,17 +80,9 @@ export const queryEntries = async (
     ])
     .toArray();
 
-  const entriesWithJournal = await Promise.all(
-    entries.map(async (entry) => {
-      const journal = await getJournalData(userEmail, entry.journalId);
-      return { ...entry, journal: journal };
-    })
-  );
+  //TODO: JOIN WITH JOURNAL
 
-  return new Paginated(
-    entriesWithJournal,
-    new Pagination(pageSize, page, total)
-  );
+  return new Paginated(entries, new Pagination(pageSize, page, total));
 };
 
 export const getEntry = async (userEmail: string, id: string) => {
@@ -105,8 +94,7 @@ export const getEntry = async (userEmail: string, id: string) => {
     .collection(COLLECTION)
     .findOne({ _id: new ObjectId(id) });
 
-  const journal = await getJournalData(userEmail, entry.journalId);
-  entry.journal = journal;
+  //TODO: JOIN WITH JOURNAL
   return entry;
 };
 

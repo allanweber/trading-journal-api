@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Direction } from './direction';
 import { EntryType } from './entryType';
-import { journalSchema } from './journal';
+// import { journalSchema } from './journal';
 
 export const tradeSchema = z
   .object({
@@ -286,7 +286,7 @@ export const entrySchema = z.object({
   accountChange: z.number().optional(),
   accountBalance: z.number().optional(),
   accountRisk: z.number().optional(),
-  journal: journalSchema.optional(),
+  // journal: journalSchema.optional(),
 });
 
 export type Trade = z.infer<typeof tradeSchema>;

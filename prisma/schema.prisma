@@ -11,11 +11,21 @@ datasource db {
 }
 
 model Journal {
-  id             String   @id @default(cuid())
-  name           String   @db.VarChar(50)
-  description    String?  @db.VarChar(255)
-  startDate      DateTime @default(now())
-  startBalance   Decimal  @default(0) @db.Decimal(10, 2)
-  currency       String   @db.VarChar(5)
-  currentBalance Decimal  @default(0) @db.Decimal(10, 2)
+  id             String    @id @default(cuid())
+  user           String    @db.VarChar(150)
+  name           String    @db.VarChar(50)
+  description    String?   @db.VarChar(255)
+  startDate      DateTime  @default(now())
+  startBalance   Decimal   @default(0) @db.Decimal(10, 2)
+  currency       String    @db.VarChar(5)
+  currentBalance Decimal   @default(0) @db.Decimal(10, 2)
+  balances       Balance[]
+}
+
+model Balance {
+  id        String   @id @default(cuid())
+  journal   Journal  @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  journalId String
+  date      DateTime @default(now())
+  balance   Decimal  @default(0) @db.Decimal(10, 2)
 }

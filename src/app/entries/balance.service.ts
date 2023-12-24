@@ -1,9 +1,8 @@
 import { Direction } from '../model/direction';
 import { Entry } from '../model/entry';
 import { EntryType } from '../model/entryType';
-import { Balance } from '../model/journal';
 
-export const balanceEntry = async (entry: Entry, balance: Balance) => {
+export const balanceEntry = async (entry: Entry, balance: number) => {
   if (entry.entryType === EntryType.Trade) {
     entry = balanceTrade(entry, balance);
   } else {
@@ -27,7 +26,7 @@ export const balanceEntry = async (entry: Entry, balance: Balance) => {
   }
 
   if (entry.result) {
-    let accountChange = parseFloat((entry.result / balance.current).toFixed(4));
+    let accountChange = parseFloat((entry.result / balance).toFixed(4));
     if (accountChange < 0 && entry.result > 0) {
       accountChange = accountChange * -1;
     }
@@ -38,15 +37,13 @@ export const balanceEntry = async (entry: Entry, balance: Balance) => {
   }
 
   if (entry.result) {
-    entry.accountBalance = parseFloat(
-      (balance.current + entry.result).toFixed(2)
-    );
+    entry.accountBalance = parseFloat((balance + entry.result).toFixed(2));
   }
 
   return entry;
 };
 
-const balanceTrade = (entry: Entry, balance: Balance): Entry => {
+const balanceTrade = (entry: Entry, balance: number): Entry => {
   if (isTradeClosing(entry)) {
     if (entry.direction === Direction.Long) {
       const result = parseFloat(
@@ -69,11 +66,11 @@ const balanceTrade = (entry: Entry, balance: Balance): Entry => {
     let accountRisk = undefined;
     if (entry.direction === Direction.Long) {
       accountRisk = parseFloat(
-        (((entry.price - entry.loss) * entry.size) / balance.current).toFixed(4)
+        (((entry.price - entry.loss) * entry.size) / balance).toFixed(4)
       );
     } else {
       accountRisk = parseFloat(
-        (((entry.loss - entry.price) * entry.size) / balance.current).toFixed(4)
+        (((entry.loss - entry.price) * entry.size) / balance).toFixed(4)
       );
     }
     if (accountRisk < 0) {

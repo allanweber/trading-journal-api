@@ -1,12 +1,7 @@
-import { ObjectId } from 'mongodb';
-import mongoClient from '../../loaders/mongodb';
+import { Journal } from '@prisma/client';
 import { prismaClient } from '../../loaders/prisma';
-import logger from '../../logger';
-import { getDbName } from '../../utils/database';
-import { Balance, Journal } from '../model/journal';
+import { getOnlyDate } from '../../utils/dateTime';
 import { Paginated, Pagination } from '../model/pagination';
-
-const COLLECTION = 'journals';
 
 export const queryJournals = async (
   userEmail: string,
@@ -17,155 +12,101 @@ export const queryJournals = async (
 ) => {
   let queries = {};
   if (query) {
-    queries = { name: { $regex: query, $options: 'i' } };
+    queries = { name: { contains: query } };
   }
   if (currencies) {
     queries = {
       ...queries,
-      currency: { $in: currencies },
+      currency: { in: currencies },
     };
   }
 
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const [
-    {
-      total: [total = 0],
-      journals,
+  const result = await prismaClient.journal.findMany({
+    where: {
+      user: userEmail,
+      ...queries,
     },
-  ] = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .aggregate([
-      { $match: queries },
-      {
-        $facet: {
-          total: [{ $group: { _id: 1, count: { $sum: 1 } } }],
-          journals: [
-            { $sort: { startDate: -1 } },
-            { $skip: pageSize * (page - 1) },
-            { $limit: pageSize },
-          ],
-        },
-      },
-      {
-        $project: {
-          total: '$total.count',
-          journals: '$journals',
-        },
-      },
-    ])
-    .toArray();
+    skip: pageSize * (page - 1),
+    take: pageSize,
+    orderBy: {
+      startDate: 'desc',
+    },
+  });
 
-  return new Paginated(journals, new Pagination(pageSize, page, total));
+  const rows = await prismaClient.journal.count({
+    where: {
+      user: userEmail,
+      ...queries,
+    },
+  });
+
+  return new Paginated(result, new Pagination(pageSize, page, rows));
 };
 
 export const getJournal = async (userEmail: string, id: string) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const journal = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .findOne({ _id: new ObjectId(id) });
+  const journal = await prismaClient.journal.findUnique({
+    where: {
+      id,
+      user: userEmail,
+    },
+  });
 
   return journal;
 };
 
 export const saveJournal = async (userEmail: string, journal: Journal) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const { _id, ...record } = journal;
-
-  if (!_id) {
-    record.balance = { current: record.startBalance };
-  } else {
-    const currentJournal = await getJournal(userEmail, _id);
-    record.balance = currentJournal.balance;
-  }
-
-  await prismaClient.journal.create({
-    data: {
-      name: record.name,
-      description: record.description,
-      startDate: record.startDate,
-      startBalance: record.startBalance,
-      currency: record.currency,
-      currentBalance: record.startBalance,
+  return await prismaClient.journal.upsert({
+    where: {
+      id: journal.id || '',
+      user: userEmail,
+    },
+    update: {
+      name: journal.name,
+      description: journal.description,
+      currency: journal.currency,
+    },
+    create: {
+      name: journal.name,
+      user: userEmail,
+      description: journal.description,
+      startDate: journal.startDate,
+      startBalance: journal.startBalance,
+      currency: journal.currency,
+      currentBalance: journal.startBalance,
+      balances: {
+        create: {
+          balance: journal.startBalance,
+          date: getOnlyDate(journal.startDate),
+        },
+      },
     },
   });
-
-  const journalsQuery = await prismaClient.journal.findMany({});
-  logger.info(JSON.stringify(journalsQuery, null, 2));
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: { ...record } },
-      { upsert: true }
-    )
-    .then(() => record);
-
-  return result;
 };
 
 export const deleteJournal = async (userEmail: string, id: string) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .deleteOne({ _id: new ObjectId(id) });
-
-  return result;
+  await prismaClient.journal.delete({
+    where: {
+      id,
+      user: userEmail,
+    },
+  });
 };
 
 export const getAllJournals = async (userEmail: string) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const journals = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .find()
-    .project({ name: 1, description: 1, currency: 1 })
-    .toArray();
-
-  return journals;
+  return await prismaClient.journal.findMany({
+    where: {
+      user: userEmail,
+    },
+  });
 };
 
-export const getJournalData = async (userEmail: string, id: string) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
+export const getJournalBalance = async (userEmail: string, id: string) => {
+  const journal = await prismaClient.journal.findUnique({
+    where: {
+      id,
+      user: userEmail,
+    },
+  });
 
-  const options = { projection: { name: 1, currency: 1 } };
-
-  const journal = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .findOne({ _id: new ObjectId(id) }, options);
-
-  return journal;
-};
-
-export const getJournalBalance = async (
-  userEmail: string,
-  id: string
-): Promise<Balance> => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const options = { projection: { balance: 1 } };
-
-  const journal = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .findOne({ _id: new ObjectId(id) }, options);
-
-  return journal.balance;
+  return parseFloat(journal?.currentBalance?.toFixed(2));
 };

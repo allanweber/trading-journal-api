@@ -1,8 +1,8 @@
+import { Journal } from '@prisma/client';
 import { Response, Router } from 'express';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
-import { journalSchema } from '../model/journal';
 import {
   deleteJournal,
   getAllJournals,
@@ -57,13 +57,9 @@ export class JournalsRoutes extends Route {
 
   private saveJournal = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { body } = req;
-      const parse = journalSchema.safeParse(body);
-      if (parse.success === false) {
-        return res.status(400).json({ message: parse.error.message });
-      }
-      const response = await saveJournal(req.email, parse.data);
-      return res.status(parse.data._id ? 200 : 201).json(response);
+      const journal = req.body as Journal;
+      const response = await saveJournal(req.email, journal);
+      return res.status(journal.id ? 200 : 201).json(response);
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
