@@ -2,14 +2,9 @@ import { Response, Router } from 'express';
 import { AuthenticatedRequest } from '../../routes/authenticated';
 import { protectRoute } from '../../routes/protected';
 import { Route } from '../../routes/route';
-import {
-  depositSchema,
-  dividendSchema,
-  taxesSchema,
-  tradeSchema,
-  withdrawalSchema,
-} from '../model/entry';
-import { EntryType } from '../model/entryType';
+
+import { Entry } from '@prisma/client';
+import logger from '../../logger';
 import {
   deleteEntry,
   getEntry,
@@ -77,37 +72,13 @@ export class EntriesRoutes extends Route {
 
   private saveEntry = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { body } = req;
+      const entry = req.body as Entry;
 
-      let parse = undefined;
-      switch (body.entryType) {
-        case EntryType.Deposit:
-          parse = depositSchema.safeParse(body);
-          break;
-        case EntryType.Dividend:
-          parse = dividendSchema.safeParse(body);
-          break;
-        case EntryType.Taxes:
-          parse = taxesSchema.safeParse(body);
-          break;
-        case EntryType.Withdrawal:
-          parse = withdrawalSchema.safeParse(body);
-          break;
-        case EntryType.Trade:
-          parse = tradeSchema.safeParse(body);
-          break;
-        default:
-          return res.status(400).json({ message: 'Invalid entry type' });
-      }
+      const response = await saveEntry(req.email, entry);
 
-      if (parse.success === false) {
-        return res.status(400).json({ message: parse.error.message });
-      }
-
-      const response = await saveEntry(req.email, parse.data);
-
-      return res.status(parse.data._id ? 200 : 201).json(response);
+      return res.status(entry.id ? 200 : 201).json(response);
     } catch (error) {
+      logger.error(error);
       return res.status(500).json({ message: error.message });
     }
   };

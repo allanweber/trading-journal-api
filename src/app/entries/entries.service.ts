@@ -1,20 +1,8 @@
-import { ObjectId } from 'mongodb';
-import mongoClient from '../../loaders/mongodb';
-import logger from '../../logger';
-import { getDbName } from '../../utils/database';
+import { Entry } from '@prisma/client';
+import { prismaClient } from '../../loaders/prisma';
 import { getJournalBalance } from '../journals/journals.service';
-import {
-  Deposit,
-  Dividend,
-  Taxes,
-  Trade,
-  Withdrawal,
-  entrySchema,
-} from '../model/entry';
 import { Paginated, Pagination } from '../model/pagination';
 import { balanceEntry } from './balance.service';
-
-const COLLECTION = 'entries';
 
 export const queryEntries = async (
   userEmail: string,
@@ -27,125 +15,130 @@ export const queryEntries = async (
 ) => {
   let queries = {};
   if (query) {
-    queries = { symbol: { $regex: query, $options: 'i' } };
+    queries = { symbol: { contains: query } };
   }
   if (journals) {
     queries = {
       ...queries,
-      journalId: { $in: journals },
+      journalId: { in: journals },
     };
   }
   if (entryType) {
     queries = {
       ...queries,
-      entryType: { $in: entryType },
+      entryType: { in: entryType },
     };
   }
   if (direction) {
     queries = {
       ...queries,
-      direction: { $in: direction },
+      direction: { in: direction },
     };
   }
 
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const [
-    {
-      total: [total = 0],
-      entries,
+  const result = await prismaClient.entry.findMany({
+    where: {
+      user: userEmail,
+      ...queries,
     },
-  ] = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .aggregate([
-      { $match: queries },
-      {
-        $facet: {
-          total: [{ $group: { _id: 1, count: { $sum: 1 } } }],
-          entries: [
-            { $sort: { startDate: -1 } },
-            { $skip: pageSize * (page - 1) },
-            { $limit: pageSize },
-          ],
-        },
-      },
-      {
-        $project: {
-          total: '$total.count',
-          entries: '$entries',
-        },
-      },
-    ])
-    .toArray();
+    include: {
+      journal: true,
+    },
+    skip: pageSize * (page - 1),
+    take: pageSize,
+    orderBy: {
+      date: 'desc',
+    },
+  });
 
-  //TODO: JOIN WITH JOURNAL
+  const rows = await prismaClient.entry.count({
+    where: {
+      user: userEmail,
+      ...queries,
+    },
+  });
 
-  return new Paginated(entries, new Pagination(pageSize, page, total));
+  return new Paginated(result, new Pagination(pageSize, page, rows));
 };
 
 export const getEntry = async (userEmail: string, id: string) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
+  const entry = await prismaClient.entry.findUnique({
+    where: {
+      id,
+      user: userEmail,
+    },
+    include: {
+      journal: true,
+    },
+  });
 
-  const entry = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .findOne({ _id: new ObjectId(id) });
-
-  //TODO: JOIN WITH JOURNAL
   return entry;
 };
 
 export const deleteEntry = async (userEmail: string, id: string) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
-  const entry = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .deleteOne({ _id: new ObjectId(id) });
-
-  return entry;
+  await prismaClient.entry.delete({
+    where: {
+      id,
+      user: userEmail,
+    },
+  });
 };
 
-export const saveEntry = async (
-  userEmail: string,
-  entry: Trade | Deposit | Taxes | Dividend | Withdrawal
-) => {
-  const client = await mongoClient;
-  const dbName = getDbName(userEmail);
-
+export const saveEntry = async (userEmail: string, entry: Entry) => {
   const balance = await getJournalBalance(userEmail, entry.journalId);
-
   if (!balance) {
     throw new Error(`Journal id ${entry.journalId} does not exist.`);
   }
+  const balancedEntry = await balanceEntry(entry, balance);
 
-  const parsedEntry = entrySchema.parse(entry);
-  const balancedEntry = await balanceEntry(parsedEntry, balance);
-  // if(balanceEntry.exitDate) {
-
-  // }
-
-  const { _id, ...record } = balancedEntry;
-
-  const result = await client
-    .db(dbName)
-    .collection(COLLECTION)
-    .findOneAndUpdate(
-      { _id: new ObjectId(_id) },
-      { $setOnInsert: { ...record } },
-      { upsert: true, ignoreUndefined: false }
-    );
-  // .updateOne(
-  //   { _id: new ObjectId(_id) },
-  //   { $set: { ...record } },
-  //   { upsert: true, ignoreUndefined: false }
-  // );
-
-  logger.info(`Saved entry ${JSON.stringify(result)}`);
+  const result = await prismaClient.entry.upsert({
+    where: {
+      id: balancedEntry.id || '',
+      user: userEmail,
+    },
+    update: {
+      date: balancedEntry.date,
+      price: balancedEntry.price,
+      entryType: balancedEntry.entryType,
+      notes: balancedEntry.notes ?? null,
+      symbol: balancedEntry.symbol ?? null,
+      direction: balancedEntry.direction ?? null,
+      size: balancedEntry.size ?? null,
+      profit: balancedEntry.profit ?? null,
+      loss: balancedEntry.loss ?? null,
+      costs: balancedEntry.costs ?? null,
+      exitDate: balancedEntry.exitDate ?? null,
+      exitPrice: balancedEntry.exitPrice ?? null,
+      result: balancedEntry.result ?? null,
+      grossResult: balancedEntry.grossResult ?? null,
+      accountChange: balancedEntry.accountChange ?? null,
+      accountBalance: balancedEntry.accountBalance ?? null,
+      accountRisk: balancedEntry.accountRisk ?? null,
+      plannedRR: balancedEntry.plannedRR ?? null,
+    },
+    create: {
+      user: userEmail,
+      journalId: balancedEntry.journalId,
+      date: balancedEntry.date,
+      price: balancedEntry.price,
+      entryType: balancedEntry.entryType,
+      notes: balancedEntry.notes ?? null,
+      symbol: balancedEntry.symbol ?? null,
+      direction: balancedEntry.direction ?? null,
+      size: balancedEntry.size ?? null,
+      profit: balancedEntry.profit ?? null,
+      loss: balancedEntry.loss ?? null,
+      costs: balancedEntry.costs ?? null,
+      exitDate: balancedEntry.exitDate ?? null,
+      exitPrice: balancedEntry.exitPrice ?? null,
+      result: balancedEntry.result ?? null,
+      grossResult: balancedEntry.grossResult ?? null,
+      accountChange: balancedEntry.accountChange ?? null,
+      accountBalance: balancedEntry.accountBalance ?? null,
+      accountRisk: balancedEntry.accountRisk ?? null,
+      plannedRR: balancedEntry.plannedRR ?? null,
+    },
+  });
 
   return result;
 };

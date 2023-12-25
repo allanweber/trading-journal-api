@@ -1,25 +1,23 @@
-import { Direction } from '../model/direction';
-import { Entry } from '../model/entry';
-import { EntryType } from '../model/entryType';
+import { Direction, Entry, EntryType } from '@prisma/client';
 
 export const balanceEntry = async (entry: Entry, balance: number) => {
-  if (entry.entryType === EntryType.Trade) {
+  if (entry.entryType === EntryType.TRADE) {
     entry = balanceTrade(entry, balance);
   } else {
     entry.grossResult = entry.price;
-    if (entry.entryType === EntryType.Deposit) {
+    if (entry.entryType === EntryType.DEPOSIT) {
       entry.result = entry.price;
       entry.exitDate = entry.date;
     }
-    if (entry.entryType === EntryType.Withdrawal) {
+    if (entry.entryType === EntryType.WITHDRAWAL) {
       entry.result = entry.price * -1;
       entry.exitDate = entry.date;
     }
-    if (entry.entryType === EntryType.Dividend) {
+    if (entry.entryType === EntryType.DIVIDEND) {
       entry.result = entry.price;
       entry.exitDate = entry.date;
     }
-    if (entry.entryType === EntryType.Taxes) {
+    if (entry.entryType === EntryType.TAXES) {
       entry.result = entry.price * -1;
       entry.exitDate = entry.date;
     }
@@ -45,7 +43,7 @@ export const balanceEntry = async (entry: Entry, balance: number) => {
 
 const balanceTrade = (entry: Entry, balance: number): Entry => {
   if (isTradeClosing(entry)) {
-    if (entry.direction === Direction.Long) {
+    if (entry.direction === Direction.LONG) {
       const result = parseFloat(
         ((entry.exitPrice - entry.price) * entry.size).toFixed(2)
       );
@@ -60,11 +58,9 @@ const balanceTrade = (entry: Entry, balance: number): Entry => {
     }
   }
 
-  //TODO:RR
-
   if (entry.loss) {
     let accountRisk = undefined;
-    if (entry.direction === Direction.Long) {
+    if (entry.direction === Direction.LONG) {
       accountRisk = parseFloat(
         (((entry.price - entry.loss) * entry.size) / balance).toFixed(4)
       );
@@ -78,6 +74,24 @@ const balanceTrade = (entry: Entry, balance: number): Entry => {
     }
     entry.accountRisk = accountRisk;
   }
+
+  // if (entry.profit || entry.loss) {
+  //   const profit = entry.profit || 0;
+  //   const loss = entry.loss || 0;
+  //   let reward;
+  //   let risk;
+
+  //   if (entry.direction === Direction.Long) {
+  //     reward = profit - entry.price;
+  //     risk = entry.price - loss;
+  //   } else {
+  //     reward = entry.price - profit;
+  //     risk = loss - entry.price;
+  //   }
+  //   reward = reward * entry.size;
+  //   risk = risk * entry.size;
+  //   entry.plannedRR = parseFloat((reward / risk).toFixed(2));
+  // }
 
   return entry;
 };

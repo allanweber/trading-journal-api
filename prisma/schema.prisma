@@ -15,17 +15,57 @@ model Journal {
   user           String    @db.VarChar(150)
   name           String    @db.VarChar(50)
   description    String?   @db.VarChar(255)
-  startDate      DateTime  @default(now())
-  startBalance   Decimal   @default(0) @db.Decimal(10, 2)
+  startDate      DateTime
+  startBalance   Float     @db.DoublePrecision
   currency       String    @db.VarChar(5)
-  currentBalance Decimal   @default(0) @db.Decimal(10, 2)
+  currentBalance Float     @db.DoublePrecision
   balances       Balance[]
+  entries        Entry[]
 }
 
 model Balance {
   id        String   @id @default(cuid())
   journal   Journal  @relation(fields: [journalId], references: [id], onDelete: Cascade)
   journalId String
-  date      DateTime @default(now())
-  balance   Decimal  @default(0) @db.Decimal(10, 2)
+  date      DateTime
+  balance   Float?   @db.DoublePrecision
+}
+
+enum Direction {
+  LONG
+  SHORT
+}
+
+enum EntryType {
+  TRADE
+  WITHDRAWAL
+  DEPOSIT
+  TAXES
+  DIVIDEND
+}
+
+model Entry {
+  id             String     @id @default(cuid())
+  user           String     @db.VarChar(150)
+  journal        Journal    @relation(fields: [journalId], references: [id])
+  journalId      String
+  date           DateTime
+  price          Float      @db.DoublePrecision
+  entryType      EntryType
+  notes          String?    @db.VarChar(255)
+  symbol         String?    @db.VarChar(50)
+  direction      Direction?
+  size           Float?     @db.DoublePrecision
+  profit         Float?     @db.DoublePrecision
+  loss           Float?     @db.DoublePrecision
+  costs          Float?     @db.DoublePrecision
+  exitDate       DateTime?
+  exitPrice      Float?     @db.DoublePrecision
+  //Calculated fields
+  result         Float?     @db.DoublePrecision
+  grossResult    Float?     @db.DoublePrecision
+  accountChange  Float?     @db.DoublePrecision
+  accountBalance Float?     @db.DoublePrecision
+  accountRisk    Float?     @db.DoublePrecision
+  plannedRR      Float?     @db.DoublePrecision
 }
