@@ -10,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Journal {
+model Portfolio {
   id             String    @id @default(cuid())
   user           String    @db.VarChar(150)
   name           String    @db.VarChar(50)
@@ -24,11 +24,11 @@ model Journal {
 }
 
 model Balance {
-  id        String   @id @default(cuid())
-  journal   Journal  @relation(fields: [journalId], references: [id], onDelete: Cascade)
-  journalId String
-  date      DateTime
-  balance   Float?   @db.DoublePrecision
+  id          String    @id @default(cuid())
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  portfolioId String
+  date        DateTime
+  balance     Float?    @db.DoublePrecision
 }
 
 enum Direction {
@@ -36,36 +36,50 @@ enum Direction {
   SHORT
 }
 
+enum OrderStatus {
+  OPEN
+  CLOSED
+  CANCELED
+}
+
 enum EntryType {
-  TRADE
+  STOCK
+  OPTION
+  CRYPTO
+  FUTURES
+  FOREX
+  INDEX
   WITHDRAWAL
   DEPOSIT
   TAXES
   DIVIDEND
+  FEES
 }
 
 model Entry {
-  id             String     @id @default(cuid())
-  user           String     @db.VarChar(150)
-  journal        Journal    @relation(fields: [journalId], references: [id])
-  journalId      String
+  id             String      @id @default(cuid())
+  user           String      @db.VarChar(150)
+  portfolio      Portfolio   @relation(fields: [portfolioId], references: [id])
+  portfolioId    String
   date           DateTime
-  price          Float      @db.DoublePrecision
+  price          Float       @db.DoublePrecision
   entryType      EntryType
-  notes          String?    @db.VarChar(255)
-  symbol         String?    @db.VarChar(50)
+  orderStatus    OrderStatus
+  orderRef       String      @db.VarChar(50)
+  notes          String?     @db.VarChar(255)
+  symbol         String?     @db.VarChar(50)
   direction      Direction?
-  size           Float?     @db.DoublePrecision
-  profit         Float?     @db.DoublePrecision
-  loss           Float?     @db.DoublePrecision
-  costs          Float?     @db.DoublePrecision
+  size           Float?      @db.DoublePrecision
+  profit         Float?      @db.DoublePrecision
+  loss           Float?      @db.DoublePrecision
+  costs          Float?      @db.DoublePrecision
   exitDate       DateTime?
-  exitPrice      Float?     @db.DoublePrecision
+  exitPrice      Float?      @db.DoublePrecision
   //Calculated fields
-  result         Float?     @db.DoublePrecision
-  grossResult    Float?     @db.DoublePrecision
-  accountChange  Float?     @db.DoublePrecision
-  accountBalance Float?     @db.DoublePrecision
-  accountRisk    Float?     @db.DoublePrecision
-  plannedRR      Float?     @db.DoublePrecision
+  result         Float?      @db.DoublePrecision
+  grossResult    Float?      @db.DoublePrecision
+  accountChange  Float?      @db.DoublePrecision
+  accountBalance Float?      @db.DoublePrecision
+  accountRisk    Float?      @db.DoublePrecision
+  plannedRR      Float?      @db.DoublePrecision
 }

@@ -1,13 +1,13 @@
-import { Entry } from '@prisma/client';
-import { prismaClient } from '../../loaders/prisma';
-import { getJournalBalance } from '../journals/journals.service';
-import { Paginated, Pagination } from '../model/pagination';
-import { balanceEntry } from './balance.service';
+import { Entry } from "@prisma/client";
+import { prismaClient } from "../../loaders/prisma";
+import { Paginated, Pagination } from "../model/pagination";
+import { getPortfolioBalance } from "../portfolio/portfolio.service";
+import { balanceEntry } from "./balance";
 
 export const queryEntries = async (
   userEmail: string,
   query?: string,
-  journals?: string[],
+  portfolios?: string[],
   entryType?: string[],
   direction?: string[],
   pageSize: number = 10,
@@ -17,10 +17,10 @@ export const queryEntries = async (
   if (query) {
     queries = { symbol: { contains: query } };
   }
-  if (journals) {
+  if (portfolios) {
     queries = {
       ...queries,
-      journalId: { in: journals },
+      portfolioId: { in: portfolios },
     };
   }
   if (entryType) {
@@ -42,13 +42,13 @@ export const queryEntries = async (
       ...queries,
     },
     include: {
-      journal: true,
+      portfolio: true,
+    },
+    orderBy: {
+      date: "desc",
     },
     skip: pageSize * (page - 1),
     take: pageSize,
-    orderBy: {
-      date: 'desc',
-    },
   });
 
   const rows = await prismaClient.entry.count({
@@ -68,7 +68,7 @@ export const getEntry = async (userEmail: string, id: string) => {
       user: userEmail,
     },
     include: {
-      journal: true,
+      portfolio: true,
     },
   });
 
@@ -85,58 +85,24 @@ export const deleteEntry = async (userEmail: string, id: string) => {
 };
 
 export const saveEntry = async (userEmail: string, entry: Entry) => {
-  const balance = await getJournalBalance(userEmail, entry.journalId);
+  const balance = await getPortfolioBalance(userEmail, entry.portfolioId);
   if (!balance) {
-    throw new Error(`Journal id ${entry.journalId} does not exist.`);
+    throw new Error(`Portfolio id ${entry.portfolioId} does not exist.`);
   }
-  const balancedEntry = await balanceEntry(entry, balance);
+
+  const balanced = await balanceEntry(entry, balance);
 
   const result = await prismaClient.entry.upsert({
     where: {
-      id: balancedEntry.id || '',
+      id: balanced.id || "",
+      user: userEmail,
+    },
+    create: {
+      ...balanced,
       user: userEmail,
     },
     update: {
-      date: balancedEntry.date,
-      price: balancedEntry.price,
-      entryType: balancedEntry.entryType,
-      notes: balancedEntry.notes ?? null,
-      symbol: balancedEntry.symbol ?? null,
-      direction: balancedEntry.direction ?? null,
-      size: balancedEntry.size ?? null,
-      profit: balancedEntry.profit ?? null,
-      loss: balancedEntry.loss ?? null,
-      costs: balancedEntry.costs ?? null,
-      exitDate: balancedEntry.exitDate ?? null,
-      exitPrice: balancedEntry.exitPrice ?? null,
-      result: balancedEntry.result ?? null,
-      grossResult: balancedEntry.grossResult ?? null,
-      accountChange: balancedEntry.accountChange ?? null,
-      accountBalance: balancedEntry.accountBalance ?? null,
-      accountRisk: balancedEntry.accountRisk ?? null,
-      plannedRR: balancedEntry.plannedRR ?? null,
-    },
-    create: {
-      user: userEmail,
-      journalId: balancedEntry.journalId,
-      date: balancedEntry.date,
-      price: balancedEntry.price,
-      entryType: balancedEntry.entryType,
-      notes: balancedEntry.notes ?? null,
-      symbol: balancedEntry.symbol ?? null,
-      direction: balancedEntry.direction ?? null,
-      size: balancedEntry.size ?? null,
-      profit: balancedEntry.profit ?? null,
-      loss: balancedEntry.loss ?? null,
-      costs: balancedEntry.costs ?? null,
-      exitDate: balancedEntry.exitDate ?? null,
-      exitPrice: balancedEntry.exitPrice ?? null,
-      result: balancedEntry.result ?? null,
-      grossResult: balancedEntry.grossResult ?? null,
-      accountChange: balancedEntry.accountChange ?? null,
-      accountBalance: balancedEntry.accountBalance ?? null,
-      accountRisk: balancedEntry.accountRisk ?? null,
-      plannedRR: balancedEntry.plannedRR ?? null,
+      ...balanced,
     },
   });
 

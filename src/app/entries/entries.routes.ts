@@ -26,10 +26,10 @@ export class EntriesRoutes extends Route {
   };
 
   private getEntries = async (req: AuthenticatedRequest, res: Response) => {
-    const { query, journal, type, direction, pageSize, page } = req.query;
+    const { query, portfolio, type, direction, pageSize, page } = req.query;
 
     const queryFilter = query ? query.toString() : undefined;
-    const journals = journal ? (journal as string).split(',') : undefined;
+    const portfolios = portfolio ? (portfolio as string).split(',') : undefined;
     const entryType = type ? (type as string).split(',') : undefined;
     const tradeDirection = direction
       ? (direction as string).split(',')
@@ -40,7 +40,7 @@ export class EntriesRoutes extends Route {
     const response = await queryEntries(
       req.email,
       queryFilter,
-      journals,
+      portfolios,
       entryType,
       tradeDirection,
       size,

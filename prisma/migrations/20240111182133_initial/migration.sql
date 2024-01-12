@@ -2,7 +2,10 @@
 CREATE TYPE "Direction" AS ENUM ('LONG', 'SHORT');
 
 -- CreateEnum
-CREATE TYPE "EntryType" AS ENUM ('TRADE', 'WITHDRAWAL', 'DEPOSIT', 'TAXES', 'DIVIDEND');
+CREATE TYPE "OrderStatus" AS ENUM ('OPEN', 'CLOSED', 'CANCELED');
+
+-- CreateEnum
+CREATE TYPE "EntryType" AS ENUM ('STOCK', 'OPTION', 'CRYPTO', 'FUTURES', 'FOREX', 'INDEX', 'WITHDRAWAL', 'DEPOSIT', 'TAXES', 'DIVIDEND', 'FEES');
 
 -- CreateTable
 CREATE TABLE "Journal" (
@@ -36,6 +39,8 @@ CREATE TABLE "Entry" (
     "date" TIMESTAMP(3) NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "entryType" "EntryType" NOT NULL,
+    "orderStatus" "OrderStatus" NOT NULL,
+    "orderRef" VARCHAR(50) NOT NULL,
     "notes" VARCHAR(255),
     "symbol" VARCHAR(50),
     "direction" "Direction",
