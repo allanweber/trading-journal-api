@@ -1,8 +1,8 @@
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import jwksClient from 'jwks-rsa';
-import config from '../config';
+import jwt, { JwtPayload } from "jsonwebtoken";
+import jwksClient from "jwks-rsa";
+import config from "../config";
 
-export const protectRoute = async (req, res, next) => {
+const protectRoute = async (req, res, next) => {
   const client = jwksClient({
     jwksUri: `${config.issuer}/.well-known/jwks.json`,
   });
@@ -20,25 +20,27 @@ export const protectRoute = async (req, res, next) => {
 
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-      console.error('Token not found!');
-      return res.status(401).json({ message: 'Unauthorized' });
+      console.error("Token not found!");
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     jwt.verify(token, getKey, options, function (err, decoded: JwtPayload) {
       if (err) {
-        console.error('jwt.verify Error', err);
+        console.error("jwt.verify Error", err);
         return res.sendStatus(401);
       }
-      req.user = decoded['sub'];
-      req.email = decoded['email'];
+      req.user = decoded["sub"];
+      req.email = decoded["email"];
 
       next();
     });
   } catch (err) {
-    console.error('Token not valid!');
+    console.error("Token not valid!");
     console.error(err);
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
+
+export default protectRoute;

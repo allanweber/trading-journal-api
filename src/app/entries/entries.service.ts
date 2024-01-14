@@ -1,13 +1,12 @@
 import { Entry } from "@prisma/client";
-import { prismaClient } from "../../loaders/prisma";
-import { Paginated, Pagination } from "../model/pagination";
 import { getPortfolioBalance } from "../portfolio/portfolio.service";
 import { balanceEntry } from "./balance";
+import { create, deleteOne, get, getAll, update } from "./entries.repository";
 
 export const queryEntries = async (
   userEmail: string,
+  portfolioId: string,
   query?: string,
-  portfolios?: string[],
   entryType?: string[],
   direction?: string[],
   pageSize: number = 10,
@@ -16,12 +15,6 @@ export const queryEntries = async (
   let queries = {};
   if (query) {
     queries = { symbol: { contains: query } };
-  }
-  if (portfolios) {
-    queries = {
-      ...queries,
-      portfolioId: { in: portfolios },
-    };
   }
   if (entryType) {
     queries = {
@@ -35,56 +28,18 @@ export const queryEntries = async (
       direction: { in: direction },
     };
   }
-
-  const result = await prismaClient.entry.findMany({
-    where: {
-      user: userEmail,
-      ...queries,
-    },
-    include: {
-      portfolio: true,
-    },
-    orderBy: {
-      date: "desc",
-    },
-    skip: pageSize * (page - 1),
-    take: pageSize,
-  });
-
-  const rows = await prismaClient.entry.count({
-    where: {
-      user: userEmail,
-      ...queries,
-    },
-  });
-
-  return new Paginated(result, new Pagination(pageSize, page, rows));
+  return await getAll(userEmail, portfolioId, queries, pageSize, page);
 };
 
-export const getEntry = async (userEmail: string, id: string) => {
-  const entry = await prismaClient.entry.findUnique({
-    where: {
-      id,
-      user: userEmail,
-    },
-    include: {
-      portfolio: true,
-    },
-  });
-
-  return entry;
+export const getEntry = async (userEmail: string, portfolioId: string, id: string) => {
+  return await get(userEmail, portfolioId, id);
 };
 
-export const deleteEntry = async (userEmail: string, id: string) => {
-  await prismaClient.entry.delete({
-    where: {
-      id,
-      user: userEmail,
-    },
-  });
+export const deleteEntry = async (userEmail: string, portfolioId: string, id: string) => {
+  return await deleteOne(userEmail, portfolioId, id);
 };
 
-export const saveEntry = async (userEmail: string, entry: Entry) => {
+export const saveEntry = async (userEmail: string, portfolioId: string, entry: Entry) => {
   const balance = await getPortfolioBalance(userEmail, entry.portfolioId);
   if (!balance) {
     throw new Error(`Portfolio id ${entry.portfolioId} does not exist.`);
@@ -92,19 +47,12 @@ export const saveEntry = async (userEmail: string, entry: Entry) => {
 
   const balanced = await balanceEntry(entry, balance);
 
-  const result = await prismaClient.entry.upsert({
-    where: {
-      id: balanced.id || "",
-      user: userEmail,
-    },
-    create: {
-      ...balanced,
-      user: userEmail,
-    },
-    update: {
-      ...balanced,
-    },
-  });
+  let entryById = undefined;
+  if (entry.id) entryById = await getEntry(userEmail, portfolioId, entry.id);
 
-  return result;
+  if (entryById) {
+    return await update(userEmail, portfolioId, balanced);
+  } else {
+    return await create(userEmail, portfolioId, balanced);
+  }
 };

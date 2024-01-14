@@ -8,7 +8,7 @@ CREATE TYPE "OrderStatus" AS ENUM ('OPEN', 'CLOSED', 'CANCELED');
 CREATE TYPE "EntryType" AS ENUM ('STOCK', 'OPTION', 'CRYPTO', 'FUTURES', 'FOREX', 'INDEX', 'WITHDRAWAL', 'DEPOSIT', 'TAXES', 'DIVIDEND', 'FEES');
 
 -- CreateTable
-CREATE TABLE "Journal" (
+CREATE TABLE "Portfolio" (
     "id" TEXT NOT NULL,
     "user" VARCHAR(150) NOT NULL,
     "name" VARCHAR(50) NOT NULL,
@@ -18,13 +18,13 @@ CREATE TABLE "Journal" (
     "currency" VARCHAR(5) NOT NULL,
     "currentBalance" DOUBLE PRECISION NOT NULL,
 
-    CONSTRAINT "Journal_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Portfolio_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Balance" (
     "id" TEXT NOT NULL,
-    "journalId" TEXT NOT NULL,
+    "portfolioId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "balance" DOUBLE PRECISION,
 
@@ -35,7 +35,7 @@ CREATE TABLE "Balance" (
 CREATE TABLE "Entry" (
     "id" TEXT NOT NULL,
     "user" VARCHAR(150) NOT NULL,
-    "journalId" TEXT NOT NULL,
+    "portfolioId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
     "entryType" "EntryType" NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE "Entry" (
 );
 
 -- AddForeignKey
-ALTER TABLE "Balance" ADD CONSTRAINT "Balance_journalId_fkey" FOREIGN KEY ("journalId") REFERENCES "Journal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Balance" ADD CONSTRAINT "Balance_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Entry" ADD CONSTRAINT "Entry_journalId_fkey" FOREIGN KEY ("journalId") REFERENCES "Journal"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Entry" ADD CONSTRAINT "Entry_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

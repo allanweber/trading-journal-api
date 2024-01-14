@@ -1,79 +1,30 @@
-import { Portfolio } from '@prisma/client';
-import { prismaClient } from '../../loaders/prisma';
-import { getOnlyDate } from '../../utils/dateTime';
+import { Portfolio } from "@prisma/client";
+import { create, deleteOne, get, getAll, update } from "./portfolio.repository";
 
 export const getPortfolios = async (userEmail: string) => {
-  const portfolios = await prismaClient.portfolio.findMany({
-    where: {
-      user: userEmail,
-    },
-    orderBy: {
-      startDate: 'desc',
-    },
-  });
-
-  return portfolios;
+  return await getAll(userEmail);
 };
 
 export const getPortfolio = async (userEmail: string, id: string) => {
-  const portfolio = await prismaClient.portfolio.findUnique({
-    where: {
-      id,
-      user: userEmail,
-    },
-  });
-
-  return portfolio;
+  return await get(userEmail, id);
 };
 
-export const savePortfolio = async (
-  userEmail: string,
-  portfolio: Portfolio
-) => {
-  return await prismaClient.portfolio.upsert({
-    where: {
-      id: portfolio.id || '',
-      user: userEmail,
-    },
-    update: {
-      name: portfolio.name,
-      description: portfolio.description,
-      currency: portfolio.currency,
-    },
-    create: {
-      name: portfolio.name,
-      user: userEmail,
-      description: portfolio.description,
-      startDate: portfolio.startDate,
-      startBalance: portfolio.startBalance,
-      currency: portfolio.currency,
-      currentBalance: portfolio.startBalance,
-      balances: {
-        create: {
-          balance: portfolio.startBalance,
-          date: getOnlyDate(portfolio.startDate),
-        },
-      },
-    },
-  });
+export const savePortfolio = async (userEmail: string, portfolio: Portfolio) => {
+  let portfolioById = undefined;
+  if (portfolio.id) portfolioById = await getPortfolio(userEmail, portfolio.id);
+
+  if (portfolioById) {
+    return await update(userEmail, portfolio);
+  } else {
+    return await create(userEmail, portfolio);
+  }
 };
 
 export const deletePortfolio = async (userEmail: string, id: string) => {
-  await prismaClient.portfolio.delete({
-    where: {
-      id,
-      user: userEmail,
-    },
-  });
+  return await deleteOne(userEmail, id);
 };
 
 export const getPortfolioBalance = async (userEmail: string, id: string) => {
-  const portfolio = await prismaClient.portfolio.findUnique({
-    where: {
-      id,
-      user: userEmail,
-    },
-  });
-
+  const portfolio = await getPortfolio(userEmail, id);
   return parseFloat(portfolio?.currentBalance?.toFixed(2));
 };
