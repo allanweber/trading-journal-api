@@ -1,6 +1,5 @@
 import { Portfolio } from "@prisma/client";
 import { prismaClient } from "../../loaders/prisma";
-import { saveBalance } from "./balance.service";
 
 export const getPortfolios = async (userEmail: string) => {
   return await await prismaClient.portfolio.findMany({
@@ -97,49 +96,60 @@ export const updatePortfolioBalance = async (
     balanceDate.getDate()
   );
 
-  // const balanceRecord = await prismaClient.balance.findUnique({
-  //   where: {
-  //     portfolioId_date: {
-  //       portfolioId: portfolioId,
-  //       date: balanceAtDate,
-  //     },
-  //   },
-  // });
+  const balanceRecord = await prismaClient.balance.findUnique({
+    where: {
+      portfolioId_date: {
+        portfolioId: portfolioId,
+        date: balanceAtDate,
+      },
+    },
+  });
 
-  // if (balanceRecord) {
-  //   const changedBalance = balanceRecord.balance - newBalance + balanceChange;
-  //   if (changedBalance === 0) {
-  //     await prismaClient.balance.delete({
-  //       where: {
-  //         portfolioId_date: {
-  //           portfolioId: portfolioId,
-  //           date: balanceAtDate,
-  //         },
-  //       },
-  //     });
-  //   } else {
-  //     await prismaClient.balance.update({
-  //       where: {
-  //         portfolioId_date: {
-  //           portfolioId: portfolioId,
-  //           date: balanceAtDate,
-  //         },
-  //       },
-  //       data: {
-  //         balance: changedBalance,
-  //       },
-  //     });
-  //   }
-  // } else {
-  //   await prismaClient.balance.create({
-  //     data: {
-  //       portfolioId: portfolioId,
-  //       date: balanceAtDate,
-  //       balance: newBalance,
-  //     },
-  //   });
-  // }
-  //TODO: treat when balance at the date is 0 must remove the balance record
-
-  await saveBalance(portfolioId, balanceAtDate, newBalance);
+  if (balanceRecord && balanceRecord.date.toDateString() === portfolio.startDate.toDateString()) {
+    await prismaClient.balance.update({
+      where: {
+        portfolioId_date: {
+          portfolioId: portfolioId,
+          date: balanceAtDate,
+        },
+      },
+      data: {
+        balance: newBalance,
+      },
+    });
+  } else {
+    if (balanceRecord) {
+      const changedBalance = balanceRecord.balance - newBalance + balanceChange;
+      if (changedBalance === 0) {
+        await prismaClient.balance.delete({
+          where: {
+            portfolioId_date: {
+              portfolioId: portfolioId,
+              date: balanceAtDate,
+            },
+          },
+        });
+      } else {
+        await prismaClient.balance.update({
+          where: {
+            portfolioId_date: {
+              portfolioId: portfolioId,
+              date: balanceAtDate,
+            },
+          },
+          data: {
+            balance: changedBalance,
+          },
+        });
+      }
+    } else {
+      await prismaClient.balance.create({
+        data: {
+          portfolioId: portfolioId,
+          date: balanceAtDate,
+          balance: newBalance,
+        },
+      });
+    }
+  }
 };
