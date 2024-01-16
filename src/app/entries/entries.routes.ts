@@ -7,7 +7,15 @@ import logger from "../../logger";
 import portfolioRequired, {
   AuthenticatedRequestWithPortfolio,
 } from "../../routes/portfolioRequired";
-import { deleteEntry, getEntry, queryEntries, saveEntry } from "./entries.service";
+import { exitEntrySchema } from "../model/exit-entry";
+import {
+  closeEntry,
+  createEntry,
+  deleteEntry,
+  getEntry,
+  queryEntries,
+  updateEntry,
+} from "./entries.service";
 
 export class EntriesRoutes extends Route {
   constructor(app: Router) {
@@ -19,7 +27,9 @@ export class EntriesRoutes extends Route {
     this.route.get("/:portfolioId", [protectRoute, portfolioRequired], this.getAll);
     this.route.get("/:portfolioId/:id", [protectRoute, portfolioRequired], this.get);
     this.route.delete("/:portfolioId/:id", [protectRoute, portfolioRequired], this.delete);
-    this.route.post("/:portfolioId", [protectRoute, portfolioRequired], this.save);
+    this.route.post("/:portfolioId", [protectRoute, portfolioRequired], this.post);
+    this.route.patch("/:portfolioId/:id", [protectRoute, portfolioRequired], this.patch);
+    this.route.patch("/:portfolioId/:id/close", [protectRoute, portfolioRequired], this.patchClose);
   };
 
   private getAll = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
@@ -64,13 +74,52 @@ export class EntriesRoutes extends Route {
     return res.status(200).json(id);
   };
 
-  private save = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
+  private post = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
     try {
-      const entry = req.body as Entry;
+      const response = await createEntry(req.email, req.portfolioId, req.body as Entry);
 
-      const response = await saveEntry(req.email, req.portfolioId, entry);
+      return res.status(201).json(response);
+    } catch (error) {
+      logger.error(error);
+      return res.status(500).json({ message: error.message });
+    }
+  };
 
-      return res.status(entry.id ? 200 : 201).json(response);
+  private patch = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const entryById = await getEntry(req.email, req.portfolioId, id);
+      if (!entryById) {
+        return res.status(404).json({ message: "Entry not found" });
+      }
+
+      const response = await updateEntry(req.email, req.portfolioId, id, req.body as Entry);
+
+      return res.status(200).json(response);
+    } catch (error) {
+      logger.error(JSON);
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
+  private patchClose = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const exitEntry = exitEntrySchema.safeParse(req.body);
+      if (exitEntry.success === false) {
+        return res.status(400).json(exitEntry.error);
+      }
+
+      const entryById = await getEntry(req.email, req.portfolioId, id);
+      if (!entryById) {
+        return res.status(400).json({ message: "Entry not found" });
+      }
+
+      const response = await closeEntry(req.email, req.portfolioId, id, exitEntry.data);
+
+      return res.status(200).json(response);
     } catch (error) {
       logger.error(error);
       return res.status(500).json({ message: error.message });

@@ -24,11 +24,12 @@ model Portfolio {
 }
 
 model Balance {
-  id          String    @id @default(cuid())
   portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   portfolioId String
   date        DateTime
   balance     Float?    @db.DoublePrecision
+
+  @@id([portfolioId, date])
 }
 
 enum Direction {
@@ -59,7 +60,7 @@ enum EntryType {
 model Entry {
   id             String      @id @default(cuid())
   user           String      @db.VarChar(150)
-  portfolio      Portfolio   @relation(fields: [portfolioId], references: [id])
+  portfolio      Portfolio   @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   portfolioId    String
   date           DateTime
   price          Float       @db.DoublePrecision

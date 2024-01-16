@@ -23,12 +23,11 @@ CREATE TABLE "Portfolio" (
 
 -- CreateTable
 CREATE TABLE "Balance" (
-    "id" TEXT NOT NULL,
     "portfolioId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "balance" DOUBLE PRECISION,
 
-    CONSTRAINT "Balance_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Balance_pkey" PRIMARY KEY ("portfolioId","date")
 );
 
 -- CreateTable
@@ -64,4 +63,4 @@ CREATE TABLE "Entry" (
 ALTER TABLE "Balance" ADD CONSTRAINT "Balance_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Entry" ADD CONSTRAINT "Entry_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Entry" ADD CONSTRAINT "Entry_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE CASCADE ON UPDATE CASCADE;

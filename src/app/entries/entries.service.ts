@@ -1,7 +1,9 @@
-import { Entry } from "@prisma/client";
-import { getPortfolioBalance } from "../portfolio/portfolio.service";
-import { balanceEntry } from "./balance";
-import { create, deleteOne, get, getAll, update } from "./entries.repository";
+import { Entry, EntryType, OrderStatus } from "@prisma/client";
+import { prismaClient } from "../../loaders/prisma";
+import { ExitEntry } from "../model/exit-entry";
+import { Paginated, Pagination } from "../model/pagination";
+import { getPortfolioBalance, updatePortfolioBalance } from "../portfolio/portfolio.service";
+import { balanceEntry, calculateAccountRisk, calculatePlannedRR } from "./balance";
 
 export const queryEntries = async (
   userEmail: string,
@@ -28,31 +30,226 @@ export const queryEntries = async (
       direction: { in: direction },
     };
   }
-  return await getAll(userEmail, portfolioId, queries, pageSize, page);
+
+  const result = await prismaClient.entry.findMany({
+    where: {
+      user: userEmail,
+      portfolioId,
+      ...queries,
+    },
+    include: {
+      portfolio: true,
+    },
+    orderBy: {
+      date: "desc",
+    },
+    skip: pageSize * (page - 1),
+    take: pageSize,
+  });
+
+  const rows = await prismaClient.entry.count({
+    where: {
+      user: userEmail,
+      ...queries,
+    },
+  });
+
+  return new Paginated(result, new Pagination(pageSize, page, rows));
 };
 
 export const getEntry = async (userEmail: string, portfolioId: string, id: string) => {
-  return await get(userEmail, portfolioId, id);
+  return await await prismaClient.entry.findUnique({
+    where: {
+      id,
+      portfolioId,
+      user: userEmail,
+    },
+    include: {
+      portfolio: true,
+    },
+  });
 };
 
 export const deleteEntry = async (userEmail: string, portfolioId: string, id: string) => {
-  return await deleteOne(userEmail, portfolioId, id);
+  const entry = await prismaClient.entry.findUnique({
+    where: {
+      id,
+      portfolioId,
+      user: userEmail,
+    },
+  });
+
+  if (entry.orderStatus === OrderStatus.CLOSED) {
+    const balance = await getPortfolioBalance(userEmail, portfolioId);
+    if (!balance) {
+      throw new Error(`Portfolio id ${portfolioId} does not exist.`);
+    }
+    await updatePortfolioBalance(userEmail, portfolioId, entry.exitDate, entry.result * -1);
+  }
+
+  return await prismaClient.entry.delete({
+    where: {
+      id,
+      portfolioId,
+      user: userEmail,
+    },
+  });
 };
 
-export const saveEntry = async (userEmail: string, portfolioId: string, entry: Entry) => {
-  const balance = await getPortfolioBalance(userEmail, entry.portfolioId);
-  if (!balance) {
-    throw new Error(`Portfolio id ${entry.portfolioId} does not exist.`);
+export const createEntry = async (userEmail: string, portfolioId: string, entry: Entry) => {
+  //TODO: Generate ORDER reference properly
+  if (!entry.orderRef) entry.orderRef = Math.random().toString(36).substring(7);
+
+  const created = await prismaClient.entry.create({
+    data: {
+      ...entry,
+      user: userEmail,
+      portfolioId,
+      orderStatus: OrderStatus.OPEN,
+    },
+  });
+
+  if (
+    created.entryType === EntryType.DEPOSIT ||
+    created.entryType === EntryType.WITHDRAWAL ||
+    created.entryType === EntryType.TAXES ||
+    created.entryType === EntryType.DIVIDEND ||
+    created.entryType === EntryType.FEES
+  ) {
+    return closeEntry(userEmail, portfolioId, created.id, {
+      exitDate: created.date,
+      exitPrice: created.price,
+    });
   }
+  return created;
+};
+
+export const updateEntry = async (
+  userEmail: string,
+  portfolioId: string,
+  entryId: string,
+  entry: Entry
+) => {
+  const entryById = await prismaClient.entry.findUnique({
+    where: {
+      user: userEmail,
+      portfolioId,
+      id: entryId,
+    },
+    include: {
+      portfolio: true,
+    },
+  });
+
+  if (
+    entryById.entryType === EntryType.DEPOSIT ||
+    entryById.entryType === EntryType.WITHDRAWAL ||
+    entryById.entryType === EntryType.TAXES ||
+    entryById.entryType === EntryType.FEES
+  ) {
+    return prismaClient.entry.update({
+      where: {
+        user: userEmail,
+        portfolioId,
+        id: entryId,
+      },
+      data: {
+        notes: entry.notes,
+      },
+    });
+  }
+
+  if (entryById.entryType === EntryType.DIVIDEND) {
+    return prismaClient.entry.update({
+      where: {
+        user: userEmail,
+        portfolioId,
+        id: entryId,
+      },
+      data: {
+        symbol: entry.symbol,
+        notes: entry.notes,
+      },
+    });
+  }
+
+  if (entryById.orderStatus === OrderStatus.CLOSED) {
+    return prismaClient.entry.update({
+      where: {
+        user: userEmail,
+        portfolioId,
+        id: entryId,
+      },
+      data: {
+        notes: entry.notes,
+      },
+    });
+  } else {
+    entry.accountRisk = calculateAccountRisk(entry, entryById.portfolio.currentBalance);
+    entry.plannedRR = calculatePlannedRR(entry);
+    return prismaClient.entry.update({
+      where: {
+        user: userEmail,
+        portfolioId,
+        id: entryId,
+      },
+      data: {
+        date: entry.date,
+        price: entry.price,
+        notes: entry.notes,
+        symbol: entry.symbol,
+        direction: entry.direction,
+        size: entry.size,
+        profit: entry.profit,
+        loss: entry.loss,
+        costs: entry.costs,
+        accountRisk: entry.accountRisk,
+        plannedRR: entry.plannedRR,
+      },
+    });
+  }
+};
+
+export const closeEntry = async (
+  userEmail: string,
+  portfolioId: string,
+  entryId: string,
+  exitEntry: ExitEntry
+) => {
+  const balance = await getPortfolioBalance(userEmail, portfolioId);
+  if (!balance) {
+    throw new Error(`Portfolio id ${portfolioId} does not exist.`);
+  }
+  const entry = await prismaClient.entry.findUnique({
+    where: {
+      user: userEmail,
+      portfolioId: portfolioId,
+      id: entryId,
+    },
+  });
+
+  if (entry.orderStatus === OrderStatus.CLOSED) {
+    return entry;
+  }
+
+  if (entry.date > exitEntry.exitDate) {
+    throw new Error(`Exit date must be after entry date.`);
+  }
+
+  entry.exitDate = exitEntry.exitDate;
+  entry.exitPrice = exitEntry.exitPrice;
 
   const balanced = await balanceEntry(entry, balance);
+  await updatePortfolioBalance(userEmail, portfolioId, balanced.exitDate, balanced.result);
 
-  let entryById = undefined;
-  if (entry.id) entryById = await getEntry(userEmail, portfolioId, entry.id);
-
-  if (entryById) {
-    return await update(userEmail, portfolioId, balanced);
-  } else {
-    return await create(userEmail, portfolioId, balanced);
-  }
+  return prismaClient.entry.update({
+    where: {
+      user: userEmail,
+      portfolioId: portfolioId,
+      id: entryId,
+    },
+    data: {
+      ...balanced,
+    },
+  });
 };

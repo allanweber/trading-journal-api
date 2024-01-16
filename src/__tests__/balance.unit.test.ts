@@ -1,5 +1,5 @@
 import { Direction, Entry, EntryType } from "@prisma/client";
-import { balanceEntry } from "./balance";
+import { balanceEntry } from "../app/entries/balance";
 
 describe("balanceEntry", () => {
   it("should calculate balance for Deposit entry", async () => {
@@ -63,6 +63,23 @@ describe("balanceEntry", () => {
     const result = await balanceEntry(entry as Entry, balance);
 
     expect(result.entryType).toBe(EntryType.TAXES);
+    expect(result.exitDate).toBe(entry.date);
+    expect(result.result).toBe(-12.34);
+    expect(result.grossResult).toBe(12.34);
+    expect(result.accountChange).toBe(-0.0125);
+    expect(result.accountBalance).toBe(975.31);
+  });
+
+  it("should calculate balance for Fees entry", async () => {
+    const entry: Partial<Entry> = {
+      entryType: EntryType.FEES,
+      price: 12.34,
+    };
+    const balance = 987.65;
+
+    const result = await balanceEntry(entry as Entry, balance);
+
+    expect(result.entryType).toBe(EntryType.FEES);
     expect(result.exitDate).toBe(entry.date);
     expect(result.result).toBe(-12.34);
     expect(result.grossResult).toBe(12.34);
