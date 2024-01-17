@@ -14,12 +14,6 @@ export const stockEntriesSuite = (app: express.Application) => {
         startBalance: 1000,
         currency: "USD",
         currentBalance: 1000,
-        balances: {
-          create: {
-            balance: 1000,
-            date: new Date(2001, 1, 1),
-          },
-        },
       },
     });
   };
@@ -40,7 +34,9 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(createResponse.status).toBe(201);
     expect(createResponse.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(createResponse.body.entryType).toBe(EntryType.STOCK);
-    expect(new Date(createResponse.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
+    expect(new Date(createResponse.body.date).toDateString()).toBe(
+      new Date(2001, 1, 1).toDateString()
+    );
     expect(createResponse.body.symbol).toBe("AAPL");
     expect(createResponse.body.size).toBe(1);
     expect(createResponse.body.price).toBe(100);
@@ -52,9 +48,6 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(createResponse.body.exitPrice).toBe(null);
     expect(createResponse.body.result).toBe(null);
     expect(createResponse.body.grossResult).toBe(null);
-    expect(createResponse.body.accountChange).toBe(null);
-    expect(createResponse.body.accountBalance).toBe(null);
-    expect(createResponse.body.accountRisk).toBe(null);
     expect(createResponse.body.plannedRR).toBe(null);
 
     // Balance does not change
@@ -62,30 +55,29 @@ export const stockEntriesSuite = (app: express.Application) => {
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
     expect(updatedPortfolio.currentBalance).toBe(1000);
-    expect(updatedPortfolio.balances.length).toBe(1);
-    expect(updatedPortfolio.balances[0].balance).toBe(1000);
 
     //Update all but entryType
-    let updateResponse = await request(app).patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`).send({
-      entryType: EntryType.WITHDRAWAL, //will not change
-      notes: "Updated Notes",
-      price: 200,
-      size: 2,
-      symbol: "MSFT",
-      direction: Direction.LONG,
-      costs: 10,
-      profit: 300,
-      loss: 150,
-    });
+    let updateResponse = await request(app)
+      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .send({
+        entryType: EntryType.WITHDRAWAL, //will not change
+        notes: "Updated Notes",
+        price: 200,
+        size: 2,
+        symbol: "MSFT",
+        direction: Direction.LONG,
+        costs: 10,
+        profit: 300,
+        loss: 150,
+      });
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(updateResponse.body.entryType).toBe(EntryType.STOCK);
-    expect(new Date(updateResponse.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
+    expect(new Date(updateResponse.body.date).toDateString()).toBe(
+      new Date(2001, 1, 1).toDateString()
+    );
     expect(updateResponse.body.symbol).toBe("MSFT");
     expect(updateResponse.body.size).toBe(2);
     expect(updateResponse.body.price).toBe(200);
@@ -98,24 +90,25 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updateResponse.body.exitPrice).toBe(null);
     expect(updateResponse.body.result).toBe(null);
     expect(updateResponse.body.grossResult).toBe(null);
-    expect(updateResponse.body.accountChange).toBe(null);
-    expect(updateResponse.body.accountBalance).toBe(null);
-    expect(updateResponse.body.accountRisk).toBe(0.1);
     expect(updateResponse.body.plannedRR).toBe(2);
 
     //Remove profit loss and costs
-    const updateResponse2 = await request(app).patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`).send({
-      entryType: EntryType.WITHDRAWAL, //will not change
-      notes: "Updated Notes",
-      price: 200,
-      size: 2,
-      symbol: "MSFT",
-      direction: Direction.LONG,
-    });
+    const updateResponse2 = await request(app)
+      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .send({
+        entryType: EntryType.WITHDRAWAL, //will not change
+        notes: "Updated Notes",
+        price: 200,
+        size: 2,
+        symbol: "MSFT",
+        direction: Direction.LONG,
+      });
     expect(updateResponse2.status).toBe(200);
     expect(updateResponse2.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(updateResponse2.body.entryType).toBe(EntryType.STOCK);
-    expect(new Date(updateResponse2.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
+    expect(new Date(updateResponse2.body.date).toDateString()).toBe(
+      new Date(2001, 1, 1).toDateString()
+    );
     expect(updateResponse2.body.symbol).toBe("MSFT");
     expect(updateResponse2.body.size).toBe(2);
     expect(updateResponse2.body.price).toBe(200);
@@ -128,27 +121,28 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updateResponse2.body.exitPrice).toBe(null);
     expect(updateResponse2.body.result).toBe(null);
     expect(updateResponse2.body.grossResult).toBe(null);
-    expect(updateResponse2.body.accountChange).toBe(null);
-    expect(updateResponse2.body.accountBalance).toBe(null);
-    expect(updateResponse2.body.accountRisk).toBe(null);
     expect(updateResponse2.body.plannedRR).toBe(null);
 
     //Add profit loss and costs again
-    updateResponse = await request(app).patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`).send({
-      entryType: EntryType.WITHDRAWAL, //will not change
-      notes: "Updated Notes",
-      price: 200,
-      size: 2,
-      symbol: "MSFT",
-      direction: Direction.LONG,
-      costs: 10,
-      profit: 300,
-      loss: 150,
-    });
+    updateResponse = await request(app)
+      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .send({
+        entryType: EntryType.WITHDRAWAL, //will not change
+        notes: "Updated Notes",
+        price: 200,
+        size: 2,
+        symbol: "MSFT",
+        direction: Direction.LONG,
+        costs: 10,
+        profit: 300,
+        loss: 150,
+      });
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(updateResponse.body.entryType).toBe(EntryType.STOCK);
-    expect(new Date(updateResponse.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
+    expect(new Date(updateResponse.body.date).toDateString()).toBe(
+      new Date(2001, 1, 1).toDateString()
+    );
     expect(updateResponse.body.symbol).toBe("MSFT");
     expect(updateResponse.body.size).toBe(2);
     expect(updateResponse.body.price).toBe(200);
@@ -160,18 +154,16 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updateResponse.body.exitDate).toBe(null);
     expect(updateResponse.body.exitPrice).toBe(null);
     expect(updateResponse.body.result).toBe(null);
-    expect(updateResponse.body.grossResult).toBe(null);
-    expect(updateResponse.body.accountChange).toBe(null);
-    expect(updateResponse.body.accountBalance).toBe(null);
-    expect(updateResponse.body.accountRisk).toBe(0.1);
     expect(updateResponse.body.plannedRR).toBe(2);
 
     // Still only one entry
     let allEntries = await prismaClient.entry.findMany({});
     expect(allEntries.length).toBe(1);
 
-    //  Close trade with profit
-    const invalidCloseResponse = await request(app).patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`);
+    //  Close trade with profit is invalid
+    const invalidCloseResponse = await request(app).patch(
+      `/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`
+    );
     expect(invalidCloseResponse.status).toBe(400);
 
     // Close trade with exit date lower than entry date
@@ -184,6 +176,7 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(invalidCloseResponse2.status).toBe(500);
     expect(invalidCloseResponse2.body.message).toBe("Exit date must be after entry date.");
 
+    // Close trade with profit
     let closeResponse = await request(app)
       .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`)
       .send({
@@ -201,13 +194,13 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(closeResponse.body.profit).toBe(300);
     expect(closeResponse.body.loss).toBe(150);
     expect(closeResponse.body.costs).toBe(10);
-    expect(new Date(closeResponse.body.exitDate).toDateString()).toBe(new Date(2001, 1, 2).toDateString());
+    expect(new Date(closeResponse.body.exitDate).toDateString()).toBe(
+      new Date(2001, 1, 2).toDateString()
+    );
     expect(closeResponse.body.exitPrice).toBe(300);
     expect(closeResponse.body.result).toBe(190);
     expect(closeResponse.body.grossResult).toBe(200);
-    expect(closeResponse.body.accountChange).toBe(0.19);
-    expect(closeResponse.body.accountBalance).toBe(1190);
-    expect(closeResponse.body.accountRisk).toBe(0.1);
+    expect(closeResponse.body.returnPercentage).toBe(0.95);
     expect(closeResponse.body.plannedRR).toBe(2);
 
     //Balance changed and there are two entries in balance table
@@ -215,14 +208,8 @@ export const stockEntriesSuite = (app: express.Application) => {
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
     expect(updatedPortfolio.currentBalance).toBe(1190);
-    expect(updatedPortfolio.balances.length).toBe(2);
-    expect(updatedPortfolio.balances[0].balance).toBe(1000);
-    expect(updatedPortfolio.balances[1].balance).toBe(1190);
 
     //Clone same trade again does not change trade and balance
     closeResponse = await request(app)
@@ -242,29 +229,26 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(closeResponse.body.profit).toBe(300);
     expect(closeResponse.body.loss).toBe(150);
     expect(closeResponse.body.costs).toBe(10);
-    expect(new Date(closeResponse.body.exitDate).toDateString()).toBe(new Date(2001, 1, 2).toDateString());
+    expect(new Date(closeResponse.body.exitDate).toDateString()).toBe(
+      new Date(2001, 1, 2).toDateString()
+    );
     expect(closeResponse.body.exitPrice).toBe(300);
     expect(closeResponse.body.result).toBe(190);
     expect(closeResponse.body.grossResult).toBe(200);
-    expect(closeResponse.body.accountChange).toBe(0.19);
-    expect(closeResponse.body.accountBalance).toBe(1190);
-    expect(closeResponse.body.accountRisk).toBe(0.1);
+    expect(closeResponse.body.returnPercentage).toBe(0.95);
     expect(closeResponse.body.plannedRR).toBe(2);
+
     updatedPortfolio = await prismaClient.portfolio.findUnique({
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
     expect(updatedPortfolio.currentBalance).toBe(1190);
-    expect(updatedPortfolio.balances.length).toBe(2);
-    expect(updatedPortfolio.balances[0].balance).toBe(1000);
-    expect(updatedPortfolio.balances[1].balance).toBe(1190);
 
     // Delete entry and check if balance is updated to original value
-    const deleteResponse = await request(app).delete(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`);
+    const deleteResponse = await request(app).delete(
+      `/api/v1/entries/${portfolio.id}/${createResponse.body.id}`
+    );
     expect(deleteResponse.status).toBe(200);
     allEntries = await prismaClient.entry.findMany({});
     expect(allEntries.length).toBe(0);
@@ -273,13 +257,8 @@ export const stockEntriesSuite = (app: express.Application) => {
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
 
     expect(updatedPortfolio.currentBalance).toBe(1000);
-    expect(updatedPortfolio.balances.length).toBe(1);
-    expect(updatedPortfolio.balances[0].balance).toBe(1000);
   });
 };

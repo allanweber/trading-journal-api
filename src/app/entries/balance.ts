@@ -1,8 +1,11 @@
 import { Direction, Entry, EntryType, OrderStatus } from "@prisma/client";
 
-export const balanceEntry = async (entry: Entry, balance: number) => {
+export const balanceEntry = async (entry: Entry) => {
   if (entry.entryType === EntryType.STOCK) {
-    entry = balanceTrade(entry, balance);
+    entry = balanceTrade(entry);
+    if (entry.result) {
+      entry.returnPercentage = parseFloat((entry.result / entry.price).toFixed(4));
+    }
   } else if (
     entry.entryType === EntryType.OPTION ||
     entry.entryType === EntryType.CRYPTO ||
@@ -28,25 +31,10 @@ export const balanceEntry = async (entry: Entry, balance: number) => {
     }
   }
 
-  if (entry.result) {
-    let accountChange = parseFloat((entry.result / balance).toFixed(4));
-    if (accountChange < 0 && entry.result > 0) {
-      accountChange = accountChange * -1;
-    }
-    if (accountChange > 0 && entry.result < 0) {
-      accountChange = accountChange * -1;
-    }
-    entry.accountChange = accountChange;
-  }
-
-  if (entry.result) {
-    entry.accountBalance = parseFloat((balance + entry.result).toFixed(2));
-  }
-
   return entry;
 };
 
-const balanceTrade = (entry: Entry, balance: number): Entry => {
+const balanceTrade = (entry: Entry): Entry => {
   if (isTradeClosing(entry)) {
     entry.orderStatus = OrderStatus.CLOSED;
     if (entry.direction === Direction.LONG) {
@@ -60,7 +48,6 @@ const balanceTrade = (entry: Entry, balance: number): Entry => {
     }
   }
 
-  entry.accountRisk = calculateAccountRisk(entry, balance);
   entry.plannedRR = calculatePlannedRR(entry);
 
   return entry;
@@ -68,21 +55,6 @@ const balanceTrade = (entry: Entry, balance: number): Entry => {
 
 const isTradeClosing = (entry: Entry) => {
   return entry.exitDate && entry.exitPrice;
-};
-
-export const calculateAccountRisk = (entry: Entry, balance: number) => {
-  let accountRisk = undefined;
-  if (entry.loss) {
-    if (entry.direction === Direction.LONG) {
-      accountRisk = parseFloat((((entry.price - entry.loss) * entry.size) / balance).toFixed(4));
-    } else {
-      accountRisk = parseFloat((((entry.loss - entry.price) * entry.size) / balance).toFixed(4));
-    }
-    if (accountRisk < 0) {
-      accountRisk = accountRisk * -1;
-    }
-  }
-  return accountRisk;
 };
 
 export const calculatePlannedRR = (entry: Entry) => {

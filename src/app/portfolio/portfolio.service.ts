@@ -39,12 +39,6 @@ export const savePortfolio = async (userEmail: string, portfolio: Portfolio) => 
       ...portfolio,
       currentBalance: portfolio.startBalance,
       user: userEmail,
-      balances: {
-        create: {
-          balance: portfolio.startBalance,
-          date: new Date(portfolio.startDate.getFullYear(), portfolio.startDate.getMonth() + 1, portfolio.startDate.getDate()),
-        },
-      },
     },
   });
 };
@@ -63,81 +57,15 @@ export const getPortfolioBalance = async (userEmail: string, id: string) => {
   return parseFloat(portfolio?.currentBalance?.toFixed(2));
 };
 
-export const updatePortfolioBalance = async (userEmail: string, portfolioId: string, balanceDate: Date, balanceChange: number) => {
-  const portfolio = await getPortfolio(userEmail, portfolioId);
-  if (!portfolio) {
-    throw new Error(`Portfolio id ${portfolioId} does not exist.`);
-  }
-
-  const newBalance = portfolio.currentBalance + balanceChange;
-
-  await prismaClient.portfolio.update({
+export const updatePortfolioBalance = async (portfolioId: string, valueChanged: number) => {
+  return await prismaClient.portfolio.update({
     where: {
-      id: portfolio.id,
-      user: userEmail,
+      id: portfolioId,
     },
     data: {
-      currentBalance: newBalance,
-    },
-  });
-
-  const balanceAtDate = new Date(balanceDate.getFullYear(), balanceDate.getMonth(), balanceDate.getDate());
-
-  const balanceRecord = await prismaClient.balance.findUnique({
-    where: {
-      portfolioId_date: {
-        portfolioId: portfolioId,
-        date: balanceAtDate,
+      currentBalance: {
+        increment: valueChanged,
       },
     },
   });
-
-  if (balanceRecord && balanceRecord.date.toDateString() === portfolio.startDate.toDateString()) {
-    await prismaClient.balance.update({
-      where: {
-        portfolioId_date: {
-          portfolioId: portfolioId,
-          date: balanceAtDate,
-        },
-      },
-      data: {
-        balance: newBalance,
-      },
-    });
-  } else {
-    if (balanceRecord) {
-      const changedBalance = balanceRecord.balance - newBalance + balanceChange;
-      if (changedBalance === 0) {
-        console.log("Deleting balance record");
-        await prismaClient.balance.delete({
-          where: {
-            portfolioId_date: {
-              portfolioId: portfolioId,
-              date: balanceAtDate,
-            },
-          },
-        });
-      } else {
-        await prismaClient.balance.update({
-          where: {
-            portfolioId_date: {
-              portfolioId: portfolioId,
-              date: balanceAtDate,
-            },
-          },
-          data: {
-            balance: changedBalance,
-          },
-        });
-      }
-    } else {
-      await prismaClient.balance.create({
-        data: {
-          portfolioId: portfolioId,
-          date: balanceAtDate,
-          balance: newBalance,
-        },
-      });
-    }
-  }
 };

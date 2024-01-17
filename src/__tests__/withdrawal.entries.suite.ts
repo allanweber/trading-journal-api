@@ -14,12 +14,6 @@ export const withdrawalEntriesSuite = (app: express.Application) => {
         startBalance: 1000,
         currency: "USD",
         currentBalance: 1000,
-        balances: {
-          create: {
-            balance: 1000,
-            date: new Date(2001, 1, 1),
-          },
-        },
       },
     });
   };
@@ -37,22 +31,15 @@ export const withdrawalEntriesSuite = (app: express.Application) => {
     expect(createResponse.status).toBe(201);
     expect(createResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
     expect(createResponse.body.entryType).toBe(EntryType.WITHDRAWAL);
-    expect(createResponse.body.accountBalance).toBe(900);
     expect(createResponse.body.result).toBe(-100);
-    expect(createResponse.body.accountChange).toBe(-0.1);
 
     let updatedPortfolio = await prismaClient.portfolio.findUnique({
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
 
     expect(updatedPortfolio.currentBalance).toBe(900);
-    expect(updatedPortfolio.balances.length).toBe(1);
-    expect(updatedPortfolio.balances[0].balance).toBe(900);
 
     //Will only update notes
     const updateResponse = await request(app)
@@ -66,9 +53,7 @@ export const withdrawalEntriesSuite = (app: express.Application) => {
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
     expect(updateResponse.body.entryType).toBe(EntryType.WITHDRAWAL);
-    expect(updateResponse.body.accountBalance).toBe(900);
     expect(updateResponse.body.result).toBe(-100);
-    expect(updateResponse.body.accountChange).toBe(-0.1);
     expect(updateResponse.body.notes).toBe("Updated Notes");
 
     // Will not close again or update balance
@@ -80,23 +65,16 @@ export const withdrawalEntriesSuite = (app: express.Application) => {
       });
     expect(closeResponse.status).toBe(200);
     expect(closeResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
-    expect(closeResponse.body.accountBalance).toBe(900);
     expect(closeResponse.body.result).toBe(-100);
-    expect(closeResponse.body.accountChange).toBe(-0.1);
     expect(closeResponse.body.notes).toBe("Updated Notes");
 
     updatedPortfolio = await prismaClient.portfolio.findUnique({
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
 
     expect(updatedPortfolio.currentBalance).toBe(900);
-    expect(updatedPortfolio.balances.length).toBe(1);
-    expect(updatedPortfolio.balances[0].balance).toBe(900);
 
     // Delete entry and check if balance is updated to original value
     const deleteResponse = await request(app).delete(
@@ -108,13 +86,8 @@ export const withdrawalEntriesSuite = (app: express.Application) => {
       where: {
         id: portfolio.id,
       },
-      include: {
-        balances: true,
-      },
     });
 
     expect(updatedPortfolio.currentBalance).toBe(1000);
-    expect(updatedPortfolio.balances.length).toBe(1);
-    expect(updatedPortfolio.balances[0].balance).toBe(1000);
   });
 };

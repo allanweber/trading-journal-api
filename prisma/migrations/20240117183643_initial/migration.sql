@@ -22,15 +22,6 @@ CREATE TABLE "Portfolio" (
 );
 
 -- CreateTable
-CREATE TABLE "Balance" (
-    "portfolioId" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
-    "balance" DOUBLE PRECISION,
-
-    CONSTRAINT "Balance_pkey" PRIMARY KEY ("portfolioId","date")
-);
-
--- CreateTable
 CREATE TABLE "Entry" (
     "id" TEXT NOT NULL,
     "user" VARCHAR(150) NOT NULL,
@@ -51,16 +42,11 @@ CREATE TABLE "Entry" (
     "exitPrice" DOUBLE PRECISION,
     "result" DOUBLE PRECISION,
     "grossResult" DOUBLE PRECISION,
-    "accountChange" DOUBLE PRECISION,
-    "accountBalance" DOUBLE PRECISION,
-    "accountRisk" DOUBLE PRECISION,
+    "returnPercentage" DOUBLE PRECISION,
     "plannedRR" DOUBLE PRECISION,
 
     CONSTRAINT "Entry_pkey" PRIMARY KEY ("id")
 );
-
--- AddForeignKey
-ALTER TABLE "Balance" ADD CONSTRAINT "Balance_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Entry" ADD CONSTRAINT "Entry_portfolioId_fkey" FOREIGN KEY ("portfolioId") REFERENCES "Portfolio"("id") ON DELETE CASCADE ON UPDATE CASCADE;

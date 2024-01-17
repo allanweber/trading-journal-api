@@ -11,25 +11,15 @@ datasource db {
 }
 
 model Portfolio {
-  id             String    @id @default(cuid())
-  user           String    @db.VarChar(150)
-  name           String    @db.VarChar(50)
-  description    String?   @db.VarChar(255)
+  id             String   @id @default(cuid())
+  user           String   @db.VarChar(150)
+  name           String   @db.VarChar(50)
+  description    String?  @db.VarChar(255)
   startDate      DateTime
-  startBalance   Float     @db.DoublePrecision
-  currency       String    @db.VarChar(5)
-  currentBalance Float     @db.DoublePrecision
-  balances       Balance[]
+  startBalance   Float    @db.DoublePrecision
+  currency       String   @db.VarChar(5)
+  currentBalance Float    @db.DoublePrecision
   entries        Entry[]
-}
-
-model Balance {
-  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-  portfolioId String
-  date        DateTime
-  balance     Float?    @db.DoublePrecision
-
-  @@id([portfolioId, date])
 }
 
 enum Direction {
@@ -58,29 +48,27 @@ enum EntryType {
 }
 
 model Entry {
-  id             String      @id @default(cuid())
-  user           String      @db.VarChar(150)
-  portfolio      Portfolio   @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-  portfolioId    String
-  date           DateTime
-  price          Float       @db.DoublePrecision
-  entryType      EntryType
-  orderStatus    OrderStatus
-  orderRef       String      @db.VarChar(50)
-  notes          String?     @db.VarChar(255)
-  symbol         String?     @db.VarChar(50)
-  direction      Direction?
-  size           Float?      @db.DoublePrecision
-  profit         Float?      @db.DoublePrecision
-  loss           Float?      @db.DoublePrecision
-  costs          Float?      @db.DoublePrecision
-  exitDate       DateTime?
-  exitPrice      Float?      @db.DoublePrecision
+  id               String      @id @default(cuid())
+  user             String      @db.VarChar(150)
+  portfolio        Portfolio   @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  portfolioId      String
+  date             DateTime
+  price            Float       @db.DoublePrecision
+  entryType        EntryType
+  orderStatus      OrderStatus
+  orderRef         String      @db.VarChar(50)
+  notes            String?     @db.VarChar(255)
+  symbol           String?     @db.VarChar(50)
+  direction        Direction?
+  size             Float?      @db.DoublePrecision
+  profit           Float?      @db.DoublePrecision
+  loss             Float?      @db.DoublePrecision
+  costs            Float?      @db.DoublePrecision
+  exitDate         DateTime?
+  exitPrice        Float?      @db.DoublePrecision
   //Calculated fields
-  result         Float?      @db.DoublePrecision
-  grossResult    Float?      @db.DoublePrecision
-  accountChange  Float?      @db.DoublePrecision
-  accountBalance Float?      @db.DoublePrecision
-  accountRisk    Float?      @db.DoublePrecision
-  plannedRR      Float?      @db.DoublePrecision
+  result           Float?      @db.DoublePrecision
+  grossResult      Float?      @db.DoublePrecision
+  returnPercentage Float?      @db.DoublePrecision
+  plannedRR        Float?      @db.DoublePrecision
 }

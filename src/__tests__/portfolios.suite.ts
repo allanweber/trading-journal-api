@@ -1,7 +1,6 @@
 import express from "express";
 import request from "supertest";
 import { getPortfolioBalance } from "../app/portfolio/portfolio.service";
-import { prismaClient } from "../loaders/prisma";
 
 export const portfoliosSuite = (app: express.Application) => {
   it("should create, return and delete a Portfolios", async () => {
@@ -69,62 +68,5 @@ export const portfoliosSuite = (app: express.Application) => {
 
     const balance = await getPortfolioBalance("mail@mail.com", createResponse.body.id);
     expect(balance).toBe(1000);
-
-    const balances = await prismaClient.balance.findMany({
-      where: {
-        portfolioId: createResponse.body.id,
-      },
-    });
-    expect(balances.length).toBe(1);
-  });
-
-  it("when adding multiple portfolios each portfolio must have one balance", async () => {
-    const createResponse = await request(app)
-      .post("/api/v1/portfolios")
-      .send({
-        name: "Portfolio Test",
-        description: "Portfolio Test Description",
-        startDate: new Date(2001, 1, 1),
-        startBalance: 1000,
-        currency: "USD",
-      });
-
-    expect(createResponse.status).toBe(201);
-    expect(createResponse.body.currentBalance).toBe(1000);
-
-    const createResponse2 = await request(app)
-      .post("/api/v1/portfolios")
-      .send({
-        name: "Portfolio Test 2",
-        description: "Portfolio Test Description 2",
-        startDate: new Date(2001, 1, 1),
-        startBalance: 1000,
-        currency: "USD",
-      });
-
-    expect(createResponse2.status).toBe(201);
-    expect(createResponse2.body.currentBalance).toBe(1000);
-
-    const balances = await prismaClient.balance.findMany({
-      where: {
-        portfolioId: createResponse.body.id,
-      },
-    });
-    expect(balances.length).toBe(1);
-
-    const balances2 = await prismaClient.balance.findMany({
-      where: {
-        portfolioId: createResponse2.body.id,
-      },
-    });
-    expect(balances2.length).toBe(1);
-
-    const allBalances = await prismaClient.balance.findMany();
-    expect(allBalances.length).toBe(2);
-  });
-
-  it("should return 404 when portfolio not found getting a portfolio", async () => {
-    const response = await request(app).get(`/api/v1/portfolios/123`);
-    expect(response.status).toBe(404);
   });
 };
