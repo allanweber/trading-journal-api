@@ -124,12 +124,7 @@ export const createEntry = async (userEmail: string, portfolioId: string, entry:
   return created;
 };
 
-export const updateEntry = async (
-  userEmail: string,
-  portfolioId: string,
-  entryId: string,
-  entry: Entry
-) => {
+export const updateEntry = async (userEmail: string, portfolioId: string, entryId: string, entry: Entry) => {
   const entryById = await prismaClient.entry.findUnique({
     where: {
       user: userEmail,
@@ -154,7 +149,7 @@ export const updateEntry = async (
         id: entryId,
       },
       data: {
-        notes: entry.notes,
+        notes: entry.notes ?? null,
       },
     });
   }
@@ -196,26 +191,21 @@ export const updateEntry = async (
       data: {
         date: entry.date,
         price: entry.price,
-        notes: entry.notes,
-        symbol: entry.symbol,
-        direction: entry.direction,
-        size: entry.size,
-        profit: entry.profit,
-        loss: entry.loss,
-        costs: entry.costs,
-        accountRisk: entry.accountRisk,
-        plannedRR: entry.plannedRR,
+        notes: entry.notes ?? null,
+        symbol: entry.symbol ?? null,
+        direction: entry.direction ?? null,
+        size: entry.size ?? null,
+        profit: entry.profit ?? null,
+        loss: entry.loss ?? null,
+        costs: entry.costs ?? null,
+        accountRisk: entry.accountRisk ?? null,
+        plannedRR: entry.plannedRR ?? null,
       },
     });
   }
 };
 
-export const closeEntry = async (
-  userEmail: string,
-  portfolioId: string,
-  entryId: string,
-  exitEntry: ExitEntry
-) => {
+export const closeEntry = async (userEmail: string, portfolioId: string, entryId: string, exitEntry: ExitEntry) => {
   const balance = await getPortfolioBalance(userEmail, portfolioId);
   if (!balance) {
     throw new Error(`Portfolio id ${portfolioId} does not exist.`);

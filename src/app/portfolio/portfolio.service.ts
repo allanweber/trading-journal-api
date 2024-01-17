@@ -42,11 +42,7 @@ export const savePortfolio = async (userEmail: string, portfolio: Portfolio) => 
       balances: {
         create: {
           balance: portfolio.startBalance,
-          date: new Date(
-            portfolio.startDate.getFullYear(),
-            portfolio.startDate.getMonth() + 1,
-            portfolio.startDate.getDate()
-          ),
+          date: new Date(portfolio.startDate.getFullYear(), portfolio.startDate.getMonth() + 1, portfolio.startDate.getDate()),
         },
       },
     },
@@ -67,12 +63,7 @@ export const getPortfolioBalance = async (userEmail: string, id: string) => {
   return parseFloat(portfolio?.currentBalance?.toFixed(2));
 };
 
-export const updatePortfolioBalance = async (
-  userEmail: string,
-  portfolioId: string,
-  balanceDate: Date,
-  balanceChange: number
-) => {
+export const updatePortfolioBalance = async (userEmail: string, portfolioId: string, balanceDate: Date, balanceChange: number) => {
   const portfolio = await getPortfolio(userEmail, portfolioId);
   if (!portfolio) {
     throw new Error(`Portfolio id ${portfolioId} does not exist.`);
@@ -90,11 +81,7 @@ export const updatePortfolioBalance = async (
     },
   });
 
-  const balanceAtDate = new Date(
-    balanceDate.getFullYear(),
-    balanceDate.getMonth(),
-    balanceDate.getDate()
-  );
+  const balanceAtDate = new Date(balanceDate.getFullYear(), balanceDate.getMonth(), balanceDate.getDate());
 
   const balanceRecord = await prismaClient.balance.findUnique({
     where: {
@@ -121,6 +108,7 @@ export const updatePortfolioBalance = async (
     if (balanceRecord) {
       const changedBalance = balanceRecord.balance - newBalance + balanceChange;
       if (changedBalance === 0) {
+        console.log("Deleting balance record");
         await prismaClient.balance.delete({
           where: {
             portfolioId_date: {
