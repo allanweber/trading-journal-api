@@ -16,5 +16,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "21.x"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: echo  ${{ secrets.DATABASE_URL }}
       - run: npm install
       - run: npm run test:all
