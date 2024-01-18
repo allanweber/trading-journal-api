@@ -29,7 +29,7 @@ export const depositEntriesSuite = (app: express.Application) => {
         entryType: EntryType.DEPOSIT,
       });
     expect(createResponse.status).toBe(201);
-    expect(createResponse.body.orderStatus).toBe(OrderStatus.OPEN);
+    expect(createResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
     expect(createResponse.body.entryType).toBe(EntryType.DEPOSIT);
     expect(createResponse.body.result).toBe(100);
 
