@@ -18,9 +18,13 @@ jobs:
           node-version: "21.x"
       - run: |
           touch .env
-          echo DATABASE_URL=${{ secrets.DATABASE_URL }} >> .env
+          echo DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres >> .env
           cat .env
-      - run: cat .env
+      - name: Start containers
+        run: docker-compose -f "docker-compose.yml" up -d
       - run: npm install
-      #   - run: npm run build
+      #   - run: npx prisma generate
       - run: npm run test:all
+      - name: Stop containers
+        if: always()
+        run: docker-compose -f "docker-compose.yml" down
