@@ -1,10 +1,13 @@
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import { execSync } from "child_process";
+import { Wait } from "testcontainers";
 
 let container;
 
 export async function setupTestContainer() {
-  container = await new PostgreSqlContainer().start();
+  container = await new PostgreSqlContainer()
+    .withWaitStrategy(Wait.forLogMessage("PostgreSQL init process complete; ready for start up."))
+    .start();
 
   const mappedPort = container.getMappedPort(5432);
   const host = container.getHost();
