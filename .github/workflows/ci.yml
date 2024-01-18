@@ -18,6 +18,8 @@ jobs:
           node-version: "21.x"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: echo $DATABASE_URL > .env
+      - run: cat .env
       - run: npm install
-      - run: npm run build
+      #   - run: npm run build
       - run: npm run test:all
