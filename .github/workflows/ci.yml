@@ -21,7 +21,6 @@ jobs:
         with:
           node-version: "21.x"
       - run: |
-          mvn -B clean package --file pom.xml --settings settings.xml
           echo "APP_VERSION=$(grep -m1 version package.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')" >> "$GITHUB_OUTPUT"
         id: build-version
       - run: |
@@ -38,6 +37,7 @@ jobs:
         run: docker-compose -f "docker-compose.yml" down
 
   docker:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
