@@ -6,16 +6,24 @@ on:
   pull_request:
     branches: [main]
 
-jobs:
-  test-e2e:
-    runs-on: ubuntu-latest
+env:
+  APP_NAME: trading-journal-api
 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.build-version.outputs.APP_VERSION }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "21.x"
+      - run: |
+          mvn -B clean package --file pom.xml --settings settings.xml
+          echo "APP_VERSION=$(grep -m1 version package.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')" >> "$GITHUB_OUTPUT"
+        id: build-version
       - run: |
           touch .env
           echo DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres >> .env
@@ -28,3 +36,14 @@ jobs:
       - name: Stop containers
         if: always()
         run: docker-compose -f "docker-compose.yml" down
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker Login
+        run: echo ${{ secrets.DOCKER_PASS }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+      - name: Docker Build Version PRD
+        run: docker build -t allanweber/$APP_NAME:${{needs.build.outputs.app-version}} -f Dockerfile .
+      - name: Build and Push Version
+        run: docker push allanweber/$APP_NAME:${{needs.build.outputs.app-version}}
