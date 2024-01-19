@@ -16,8 +16,8 @@ RUN npm install
 COPY ./src ./src
 
 # copy configs to /app folder
-COPY tsconfig.js ./
-COPY .eslintrc.json ./
+COPY tsconfig.json ./
+COPY .eslintrc.js ./
 
 RUN npm run build
 

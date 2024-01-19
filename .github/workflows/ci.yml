@@ -30,7 +30,6 @@ jobs:
       - name: Start containers
         run: docker-compose -f "docker-compose.yml" up -d
       - run: npm install
-      #   - run: npx prisma generate
       - run: npm run test:all
       - name: Stop containers
         if: always()
@@ -49,7 +48,7 @@ jobs:
         run: docker push allanweber/$APP_NAME:${{needs.build.outputs.app-version}}
 
   docker-latest:
-    needs: docker
+    needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
