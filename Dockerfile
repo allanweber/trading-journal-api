@@ -4,9 +4,6 @@ FROM node:21-alpine AS base
 WORKDIR /app
 
 # ---------- Builder ----------
-# Creates:
-# - node_modules: production dependencies (no dev dependencies)
-# - dist: A production build compiled with Babel
 FROM base AS builder
 
 COPY package*.json ./
@@ -32,6 +29,8 @@ FROM base AS release
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+
+ENV NODE_ENV production
 
 USER node
 
