@@ -12,6 +12,7 @@ FROM base AS builder
 COPY package*.json ./
 
 RUN npm install
+RUN npx prisma generate
 
 COPY ./src ./src
 
@@ -22,7 +23,7 @@ COPY jest.config.js ./
 
 RUN npm run build
 
-RUN npm prune --production # Remove dev dependencies
+RUN npm prune --production
 
 # ---------- Release ----------
 FROM base AS release
