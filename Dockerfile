@@ -12,6 +12,8 @@ FROM base AS builder
 COPY package*.json ./
 
 RUN npm install
+
+COPY ./prisma ./prisma
 RUN npx prisma generate
 
 COPY ./src ./src
@@ -20,7 +22,6 @@ COPY ./src ./src
 COPY tsconfig.json ./
 COPY .eslintrc.js ./
 COPY jest.config.js ./
-COPY ./prisma ./prisma
 
 RUN npm run build
 
