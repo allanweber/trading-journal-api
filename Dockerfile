@@ -18,6 +18,7 @@ COPY ./src ./src
 # copy configs to /app folder
 COPY tsconfig.json ./
 COPY .eslintrc.js ./
+COPY jest.config.js ./
 
 RUN npm run build
 
