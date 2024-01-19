@@ -20,6 +20,7 @@ COPY ./src ./src
 COPY tsconfig.json ./
 COPY .eslintrc.js ./
 COPY jest.config.js ./
+COPY ./prisma ./prisma
 
 RUN npm run build
 
