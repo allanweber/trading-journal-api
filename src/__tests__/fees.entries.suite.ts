@@ -22,7 +22,7 @@ export const feesEntriesSuite = (app: express.Application) => {
     const portfolio = await createPortfolio();
 
     const createResponse = await request(app)
-      .post(`/api/v1/entries/${portfolio.id}`)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
         date: new Date(2001, 1, 1),
         price: 100,
@@ -43,7 +43,7 @@ export const feesEntriesSuite = (app: express.Application) => {
 
     //Will only update notes
     const updateResponse = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         date: new Date(2002, 1, 1), //will not change
         price: 100, //will not change
@@ -58,7 +58,7 @@ export const feesEntriesSuite = (app: express.Application) => {
 
     // Will not close again or update balance
     const closeResponse = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`)
       .send({
         exitDate: new Date(2002, 1, 1),
         exitPrice: 200,
@@ -78,7 +78,7 @@ export const feesEntriesSuite = (app: express.Application) => {
 
     // Delete entry and check if balance is updated to original value
     const deleteResponse = await request(app).delete(
-      `/api/v1/entries/${portfolio.id}/${createResponse.body.id}`
+      `/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`
     );
     expect(deleteResponse.status).toBe(200);
 
