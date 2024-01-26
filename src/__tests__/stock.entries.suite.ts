@@ -22,7 +22,7 @@ export const stockEntriesSuite = (app: express.Application) => {
     const portfolio = await createPortfolio();
 
     const createResponse = await request(app)
-      .post(`/api/v1/entries/${portfolio.id}`)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
         date: new Date(2001, 1, 1),
         price: 100,
@@ -60,7 +60,7 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     //Update all but entryType
     let updateResponse = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
         notes: "Updated Notes",
@@ -94,7 +94,7 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     //Remove profit loss and costs
     const updateResponse2 = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
         notes: "Updated Notes",
@@ -125,7 +125,7 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     //Add profit loss and costs again
     updateResponse = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
         notes: "Updated Notes",
@@ -162,13 +162,13 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     //  Close trade with profit is invalid
     const invalidCloseResponse = await request(app).patch(
-      `/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`
+      `/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`
     );
     expect(invalidCloseResponse.status).toBe(400);
 
     // Close trade with exit date lower than entry date
     const invalidCloseResponse2 = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`)
       .send({
         exitDate: new Date(2000, 1, 2),
         exitPrice: 300,
@@ -178,7 +178,7 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     // Close trade with profit
     let closeResponse = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`)
       .send({
         exitDate: new Date(2001, 1, 2),
         exitPrice: 300,
@@ -213,7 +213,7 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     //Clone same trade again does not change trade and balance
     closeResponse = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${createResponse.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`)
       .send({
         exitDate: new Date(2001, 1, 2),
         exitPrice: 300,
@@ -247,7 +247,7 @@ export const stockEntriesSuite = (app: express.Application) => {
 
     // Delete entry and check if balance is updated to original value
     const deleteResponse = await request(app).delete(
-      `/api/v1/entries/${portfolio.id}/${createResponse.body.id}`
+      `/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`
     );
     expect(deleteResponse.status).toBe(200);
     allEntries = await prismaClient.entry.findMany({});

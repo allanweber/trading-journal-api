@@ -22,7 +22,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     const portfolio = await createPortfolio();
 
     const AAPL_response = await request(app)
-      .post(`/api/v1/entries/${portfolio.id}`)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
         date: new Date(2001, 1, 1),
         price: 100,
@@ -34,7 +34,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(AAPL_response.status).toBe(201);
 
     const MSFT_response = await request(app)
-      .post(`/api/v1/entries/${portfolio.id}`)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
         date: new Date(2001, 1, 1),
         price: 200,
@@ -46,7 +46,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(MSFT_response.status).toBe(201);
 
     const IBOV_response = await request(app)
-      .post(`/api/v1/entries/${portfolio.id}`)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
         date: new Date(2001, 1, 1),
         price: 500,
@@ -58,7 +58,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(IBOV_response.status).toBe(201);
 
     const MGLU_response = await request(app)
-      .post(`/api/v1/entries/${portfolio.id}`)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
         date: new Date(2001, 1, 1),
         price: 100,
@@ -71,7 +71,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Close AAPL winig trade
     const close_AAPL_response = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${AAPL_response.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${AAPL_response.body.id}/close`)
       .send({
         exitDate: new Date(2001, 1, 2),
         exitPrice: 200, //Entry LONG 100 * 1
@@ -93,7 +93,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Close MSFT wining trade
     const close_MSFT_response = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${MSFT_response.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${MSFT_response.body.id}/close`)
       .send({
         exitDate: new Date(2001, 1, 2),
         exitPrice: 100, //Entry SHORT 200 * 2
@@ -115,7 +115,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Close IBOV losing trade
     const close_IBOV_response = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${IBOV_response.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${IBOV_response.body.id}/close`)
       .send({
         exitDate: new Date(2001, 1, 3),
         exitPrice: 100, //Entry LONG 500 * 2
@@ -137,7 +137,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Close MGLU losing trade
     const close_MGLU_response = await request(app)
-      .patch(`/api/v1/entries/${portfolio.id}/${MGLU_response.body.id}/close`)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${MGLU_response.body.id}/close`)
       .send({
         exitDate: new Date(2001, 1, 4),
         exitPrice: 300, //Entry SHOT 100 * 3
@@ -159,7 +159,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Delete AAPL
     const delete_AAPL_response = await request(app).delete(
-      `/api/v1/entries/${portfolio.id}/${AAPL_response.body.id}`
+      `/api/v1/portfolios/${portfolio.id}/entries/${AAPL_response.body.id}`
     );
     expect(delete_AAPL_response.status).toBe(200);
 
@@ -173,7 +173,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Delete MSFT
     const delete_MSFT_response = await request(app).delete(
-      `/api/v1/entries/${portfolio.id}/${MSFT_response.body.id}`
+      `/api/v1/portfolios/${portfolio.id}/entries/${MSFT_response.body.id}`
     );
     expect(delete_MSFT_response.status).toBe(200);
 
@@ -187,7 +187,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Delete MGUL
     const delete_MGLU_response = await request(app).delete(
-      `/api/v1/entries/${portfolio.id}/${MGLU_response.body.id}`
+      `/api/v1/portfolios/${portfolio.id}/entries/${MGLU_response.body.id}`
     );
     expect(delete_MGLU_response.status).toBe(200);
 
@@ -201,7 +201,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
 
     //Delete IBOV
     const delete_IBOV_response = await request(app).delete(
-      `/api/v1/entries/${portfolio.id}/${IBOV_response.body.id}`
+      `/api/v1/portfolios/${portfolio.id}/entries/${IBOV_response.body.id}`
     );
     expect(delete_IBOV_response.status).toBe(200);
 

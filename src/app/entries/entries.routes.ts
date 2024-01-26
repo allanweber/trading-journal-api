@@ -19,17 +19,21 @@ import {
 
 export class EntriesRoutes extends Route {
   constructor(app: Router) {
-    super(app, "entries");
+    super(app, "portfolios");
     this.registerRoutes();
   }
 
   public registerRoutes = (): void => {
-    this.route.get("/:portfolioId", [protectRoute, portfolioRequired], this.getAll);
-    this.route.get("/:portfolioId/:id", [protectRoute, portfolioRequired], this.get);
-    this.route.delete("/:portfolioId/:id", [protectRoute, portfolioRequired], this.delete);
-    this.route.post("/:portfolioId", [protectRoute, portfolioRequired], this.post);
-    this.route.patch("/:portfolioId/:id", [protectRoute, portfolioRequired], this.patch);
-    this.route.patch("/:portfolioId/:id/close", [protectRoute, portfolioRequired], this.patchClose);
+    this.route.get("/:portfolioId/entries", [protectRoute, portfolioRequired], this.getAll);
+    this.route.get("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.get);
+    this.route.delete("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.delete);
+    this.route.post("/:portfolioId/entries", [protectRoute, portfolioRequired], this.post);
+    this.route.patch("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.patch);
+    this.route.patch(
+      "/:portfolioId/entries/:id/close",
+      [protectRoute, portfolioRequired],
+      this.patchClose
+    );
   };
 
   private getAll = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
