@@ -4,15 +4,14 @@ import { Route } from "../../routes/route";
 
 import { Entry } from "@prisma/client";
 import logger from "../../logger";
-import portfolioRequired, {
-  AuthenticatedRequestWithPortfolio,
-} from "../../routes/portfolioRequired";
+import portfolioRequired, { AuthenticatedRequestWithPortfolio } from "../../routes/portfolioRequired";
 import { exitEntrySchema } from "../model/exit-entry";
 import {
   closeEntry,
   createEntry,
   deleteEntry,
   getEntry,
+  getPortfolioBalances,
   queryEntries,
   updateEntry,
 } from "./entries.service";
@@ -25,15 +24,12 @@ export class EntriesRoutes extends Route {
 
   public registerRoutes = (): void => {
     this.route.get("/:portfolioId/entries", [protectRoute, portfolioRequired], this.getAll);
+    this.route.get("/:portfolioId/entries/balances", [protectRoute, portfolioRequired], this.getAllPortfoliosBalances);
     this.route.get("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.get);
     this.route.delete("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.delete);
     this.route.post("/:portfolioId/entries", [protectRoute, portfolioRequired], this.post);
     this.route.patch("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.patch);
-    this.route.patch(
-      "/:portfolioId/entries/:id/close",
-      [protectRoute, portfolioRequired],
-      this.patchClose
-    );
+    this.route.patch("/:portfolioId/entries/:id/close", [protectRoute, portfolioRequired], this.patchClose);
   };
 
   private getAll = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
@@ -54,6 +50,12 @@ export class EntriesRoutes extends Route {
       size,
       pageNumber
     );
+
+    return res.status(200).json(response);
+  };
+
+  private getAllPortfoliosBalances = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
+    const response = await getPortfolioBalances(req.email, req.portfolioId);
 
     return res.status(200).json(response);
   };

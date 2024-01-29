@@ -17,6 +17,7 @@ export class PortfolioRoutes extends Route {
     this.route.get("/:id", [protectRoute], this.get);
     this.route.post("/", [protectRoute], this.save);
     this.route.delete("/:id", [protectRoute], this.deleteOne);
+    this.route.get("/:id/balance", [protectRoute], this.getBalance);
   };
 
   private getAll = async (req: AuthenticatedRequest, res: Response) => {
@@ -52,5 +53,18 @@ export class PortfolioRoutes extends Route {
     await deletePortfolio(req.email, id);
 
     return res.status(200).json(id);
+  };
+
+  private getBalance = async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const portfolio = await getPortfolio(req.email, id);
+
+    if (!portfolio) {
+      return res.status(404).json({ message: "Portfolio not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ balance: portfolio.currentBalance, startBalance: portfolio.startBalance });
   };
 }

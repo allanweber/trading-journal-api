@@ -2,7 +2,8 @@ import { Entry, EntryType, OrderStatus } from "@prisma/client";
 import { prismaClient } from "../../loaders/prisma";
 import { ExitEntry } from "../model/exit-entry";
 import { Paginated, Pagination } from "../model/pagination";
-import { getPortfolioBalance, updatePortfolioBalance } from "../portfolio/portfolio.service";
+import { updatePortfolioBalance } from "../portfolio/portfolio.service";
+import { getPortfolioBalance } from "./../portfolio/portfolio.service";
 import { balanceEntry, calculatePlannedRR } from "./balance";
 
 export const queryEntries = async (
@@ -35,6 +36,9 @@ export const queryEntries = async (
     where: {
       user: userEmail,
       portfolioId,
+      entryType: {
+        notIn: [EntryType.DEPOSIT, EntryType.WITHDRAWAL, EntryType.TAXES, EntryType.FEES],
+      },
       ...queries,
     },
     include: {
@@ -50,11 +54,33 @@ export const queryEntries = async (
   const rows = await prismaClient.entry.count({
     where: {
       user: userEmail,
+      portfolioId,
+      entryType: {
+        notIn: [EntryType.DEPOSIT, EntryType.WITHDRAWAL, EntryType.TAXES, EntryType.FEES],
+      },
       ...queries,
     },
   });
 
   return new Paginated(result, new Pagination(pageSize, page, rows));
+};
+
+export const getPortfolioBalances = async (userEmail: string, portfolioId: string) => {
+  return await prismaClient.entry.findMany({
+    where: {
+      user: userEmail,
+      portfolioId,
+      entryType: {
+        in: [EntryType.DEPOSIT, EntryType.WITHDRAWAL, EntryType.TAXES, EntryType.FEES],
+      },
+    },
+    include: {
+      portfolio: true,
+    },
+    orderBy: {
+      date: "asc",
+    },
+  });
 };
 
 export const getEntry = async (userEmail: string, portfolioId: string, id: string) => {
@@ -124,12 +150,7 @@ export const createEntry = async (userEmail: string, portfolioId: string, entry:
   return created;
 };
 
-export const updateEntry = async (
-  userEmail: string,
-  portfolioId: string,
-  entryId: string,
-  entry: Entry
-) => {
+export const updateEntry = async (userEmail: string, portfolioId: string, entryId: string, entry: Entry) => {
   const entryById = await prismaClient.entry.findUnique({
     where: {
       user: userEmail,
@@ -208,12 +229,7 @@ export const updateEntry = async (
   }
 };
 
-export const closeEntry = async (
-  userEmail: string,
-  portfolioId: string,
-  entryId: string,
-  exitEntry: ExitEntry
-) => {
+export const closeEntry = async (userEmail: string, portfolioId: string, entryId: string, exitEntry: ExitEntry) => {
   const balance = await getPortfolioBalance(userEmail, portfolioId);
   if (!balance) {
     throw new Error(`Portfolio id ${portfolioId} does not exist.`);
