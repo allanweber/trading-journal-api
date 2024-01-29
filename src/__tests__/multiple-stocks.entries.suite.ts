@@ -171,6 +171,11 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     });
     expect(balanceAfterDeleteAPPL.currentBalance).toBe(-200);
 
+    const balanceResponse = await request(app).get(`/api/v1/portfolios/${portfolio.id}/balance`);
+    expect(balanceResponse.status).toBe(200);
+    expect(balanceResponse.body.balance).toBe(-200);
+    expect(balanceResponse.body.startBalance).toBe(1000);
+
     //Delete MSFT
     const delete_MSFT_response = await request(app).delete(
       `/api/v1/portfolios/${portfolio.id}/entries/${MSFT_response.body.id}`
