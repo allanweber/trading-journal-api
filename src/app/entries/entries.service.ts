@@ -252,6 +252,7 @@ export const closeEntry = async (userEmail: string, portfolioId: string, entryId
 
   entry.exitDate = exitEntry.exitDate;
   entry.exitPrice = exitEntry.exitPrice;
+  entry.costs = exitEntry.costs ?? entry.costs;
 
   const balanced = await balanceEntry(entry);
   await updatePortfolioBalance(portfolioId, balanced.result);

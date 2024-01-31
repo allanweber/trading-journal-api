@@ -218,4 +218,88 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     });
     expect(balanceAfterDeleteIBOV.currentBalance).toBe(1000);
   });
+
+  it("When closing trades it is possible to inform the costs again, if not informed do not change the previous costs", async () => {
+    const portfolio = await createPortfolio();
+    const tradeWithCosts = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "AAPL",
+        direction: Direction.LONG,
+        costs: 10,
+      });
+    expect(tradeWithCosts.status).toBe(201);
+    expect(tradeWithCosts.body.costs).toBe(10);
+
+    const closeTradeWithoutCosts = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${tradeWithCosts.body.id}/close`)
+      .send({
+        exitDate: new Date(2001, 1, 2),
+        exitPrice: 200, //Entry LONG 100 * 1
+      });
+    expect(closeTradeWithoutCosts.status).toBe(200);
+    expect(closeTradeWithoutCosts.body.costs).toBe(10);
+    expect(closeTradeWithoutCosts.body.grossResult).toBe(100);
+    expect(closeTradeWithoutCosts.body.result).toBe(90);
+
+    const tradeWithoutCosts = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "AAPL",
+        direction: Direction.LONG,
+      });
+    expect(tradeWithoutCosts.status).toBe(201);
+    expect(tradeWithoutCosts.body.costs).toBe(null);
+
+    const closeTradeWithoutCosts2 = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${tradeWithoutCosts.body.id}/close`)
+      .send({
+        exitDate: new Date(2001, 1, 2),
+        exitPrice: 200, //Entry LONG 100 * 1
+      });
+    expect(closeTradeWithoutCosts2.status).toBe(200);
+    expect(closeTradeWithoutCosts2.body.costs).toBe(null);
+    expect(closeTradeWithoutCosts2.body.grossResult).toBe(100);
+    expect(closeTradeWithoutCosts2.body.result).toBe(100);
+
+    const tradeWithoutCosts2 = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "AAPL",
+        direction: Direction.LONG,
+      });
+    expect(tradeWithoutCosts2.status).toBe(201);
+    expect(tradeWithoutCosts2.body.costs).toBe(null);
+
+    const closeTradeWithCosts = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${tradeWithoutCosts2.body.id}/close`)
+      .send({
+        exitDate: new Date(2001, 1, 2),
+        exitPrice: 200, //Entry LONG 100 * 1
+        costs: 10,
+      });
+    expect(closeTradeWithCosts.status).toBe(200);
+    expect(closeTradeWithCosts.body.costs).toBe(10);
+    expect(closeTradeWithCosts.body.grossResult).toBe(100);
+    expect(closeTradeWithCosts.body.result).toBe(90);
+
+    const balance = await prismaClient.portfolio.findUnique({
+      where: {
+        id: portfolio.id,
+      },
+    });
+    expect(balance.currentBalance).toBe(1280);
+  });
 };
