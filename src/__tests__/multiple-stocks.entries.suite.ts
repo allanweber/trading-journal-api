@@ -302,4 +302,112 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     });
     expect(balance.currentBalance).toBe(1280);
   });
+
+  it("Filter queries by Symbol, Entry Type, Status and Direction", async () => {
+    const portfolio = await createPortfolio();
+    const shortOpen = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "SHORT_OPEN",
+        direction: Direction.SHORT,
+      });
+    expect(shortOpen.status).toBe(201);
+    const LongOpen = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "LONG_OPEN",
+        direction: Direction.LONG,
+      });
+    expect(LongOpen.status).toBe(201);
+
+    const longWin = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 1,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "LONG_WIN",
+        direction: Direction.LONG,
+      });
+    expect(longWin.status).toBe(201);
+    const longWinClosed = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${longWin.body.id}/close`)
+      .send({
+        exitDate: new Date(2001, 1, 2),
+        exitPrice: 2,
+      });
+    expect(longWinClosed.status).toBe(200);
+
+    const shortLoss = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 1,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "SHOT_LOSS",
+        direction: Direction.SHORT,
+      });
+    expect(shortLoss.status).toBe(201);
+    const shortLossClosed = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${shortLoss.body.id}/close`)
+      .send({
+        exitDate: new Date(2001, 1, 2),
+        exitPrice: 2,
+      });
+    expect(shortLossClosed.status).toBe(200);
+
+    const dividend = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 1,
+        size: 1,
+        entryType: EntryType.DIVIDEND,
+        symbol: "DIVIDEND",
+      });
+    expect(dividend.status).toBe(201);
+
+    const queryOpen = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?status=OPEN`);
+    expect(queryOpen.status).toBe(200);
+    expect(queryOpen.body.data.length).toBe(2);
+    expect(queryOpen.body.data[0].symbol).toBe("SHORT_OPEN");
+    expect(queryOpen.body.data[1].symbol).toBe("LONG_OPEN");
+
+    const queryWin = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?query=WIN`);
+    expect(queryWin.status).toBe(200);
+    expect(queryWin.body.data.length).toBe(1);
+    expect(queryWin.body.data[0].symbol).toBe("LONG_WIN");
+
+    const queryLoss = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?query=LOSS`);
+    expect(queryLoss.status).toBe(200);
+    expect(queryLoss.body.data.length).toBe(1);
+    expect(queryLoss.body.data[0].symbol).toBe("SHOT_LOSS");
+
+    const queryDividend = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?type=DIVIDEND`);
+    expect(queryDividend.status).toBe(200);
+    expect(queryDividend.body.data.length).toBe(1);
+    expect(queryDividend.body.data[0].symbol).toBe("DIVIDEND");
+
+    const queryShort = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?direction=SHORT`);
+    expect(queryShort.status).toBe(200);
+    expect(queryShort.body.data.length).toBe(2);
+    expect(queryShort.body.data[0].symbol).toBe("SHORT_OPEN");
+    expect(queryShort.body.data[1].symbol).toBe("SHOT_LOSS");
+
+    const queryLong = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?direction=LONG`);
+    expect(queryLong.status).toBe(200);
+    expect(queryLong.body.data.length).toBe(2);
+    expect(queryLong.body.data[0].symbol).toBe("LONG_OPEN");
+    expect(queryLong.body.data[1].symbol).toBe("LONG_WIN");
+  });
 };
