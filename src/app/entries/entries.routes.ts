@@ -33,10 +33,11 @@ export class EntriesRoutes extends Route {
   };
 
   private getAll = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
-    const { query, type, direction, pageSize, page } = req.query;
+    const { query, type, status, direction, pageSize, page } = req.query;
 
     const queryFilter = query ? query.toString() : undefined;
     const entryType = type ? (type as string).split(",") : undefined;
+    const entryStatuses = status ? (status as string).split(",") : undefined;
     const tradeDirection = direction ? (direction as string).split(",") : undefined;
     const size = pageSize ? parseInt(pageSize as string) : 10;
     const pageNumber = page ? parseInt(page as string) : 1;
@@ -46,6 +47,7 @@ export class EntriesRoutes extends Route {
       req.portfolioId,
       queryFilter,
       entryType,
+      entryStatuses,
       tradeDirection,
       size,
       pageNumber

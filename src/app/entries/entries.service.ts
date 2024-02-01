@@ -11,13 +11,14 @@ export const queryEntries = async (
   portfolioId: string,
   query?: string,
   entryType?: string[],
+  statuses?: string[],
   direction?: string[],
   pageSize: number = 10,
   page: number = 1
 ) => {
   let queries = {};
   if (query) {
-    queries = { symbol: { contains: query } };
+    queries = { symbol: { contains: query, mode: "insensitive" } };
   }
   if (entryType) {
     queries = {
@@ -25,6 +26,24 @@ export const queryEntries = async (
       entryType: { in: entryType },
     };
   }
+
+  if (statuses) {
+    const resultQueries = [];
+    if (statuses.includes("OPEN")) {
+      resultQueries.push({ result: { equals: null } });
+    }
+    if (statuses.includes("LOSS")) {
+      resultQueries.push({ result: { lt: 0 } });
+    }
+    if (statuses.includes("WIN")) {
+      resultQueries.push({ result: { gt: 0 } });
+    }
+    queries = {
+      ...queries,
+      OR: [...resultQueries],
+    };
+  }
+
   if (direction) {
     queries = {
       ...queries,
