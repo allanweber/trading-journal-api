@@ -63,10 +63,8 @@ export const depositEntriesSuite = (app: express.Application) => {
         exitDate: new Date(2002, 1, 1),
         exitPrice: 200,
       });
-    expect(closeResponse.status).toBe(200);
-    expect(closeResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
-    expect(closeResponse.body.result).toBe(100);
-    expect(closeResponse.body.notes).toBe("Updated Notes");
+    expect(closeResponse.status).toBe(400);
+    expect(closeResponse.body.message).toBe("Cannot close a closed trade");
 
     updatedPortfolio = await prismaClient.portfolio.findUnique({
       where: {
