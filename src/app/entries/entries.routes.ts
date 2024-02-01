@@ -2,7 +2,7 @@ import { Response, Router } from "express";
 import protectRoute from "../../routes/protected";
 import { Route } from "../../routes/route";
 
-import { Entry } from "@prisma/client";
+import { Entry, OrderStatus } from "@prisma/client";
 import logger from "../../logger";
 import portfolioRequired, { AuthenticatedRequestWithPortfolio } from "../../routes/portfolioRequired";
 import { exitEntrySchema } from "../model/exit-entry";
@@ -120,9 +120,17 @@ export class EntriesRoutes extends Route {
         return res.status(400).json(exitEntry.error);
       }
 
+      if (exitEntry.data.exitDate && new Date(exitEntry.data.exitDate) > new Date()) {
+        return res.status(400).json({ message: "Exit date cannot be in the future" });
+      }
+
       const entryById = await getEntry(req.email, req.portfolioId, id);
       if (!entryById) {
         return res.status(400).json({ message: "Entry not found" });
+      }
+
+      if (entryById.orderStatus === OrderStatus.CLOSED) {
+        return res.status(400).json({ message: "Cannot close a closed trade" });
       }
 
       const response = await closeEntry(req.email, req.portfolioId, id, exitEntry.data);
