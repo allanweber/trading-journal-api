@@ -1,4 +1,4 @@
-# trading-journal-api
+# Trading Journal API
 
 ## Prisma
 
