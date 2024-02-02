@@ -28,12 +28,12 @@ jobs:
           echo DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres >> .env
           cat .env
       - name: Start containers
-        run: docker-compose -f "docker-compose.yml" up -d
+        run: docker-compose -f "docker/docker-compose.yml" up -d
       - run: npm install
       - run: npm run test:all
       - name: Stop containers
         if: always()
-        run: docker-compose -f "docker-compose.yml" down
+        run: docker-compose -f "docker/docker-compose.yml" down
 
   docker:
     needs: build
@@ -43,7 +43,7 @@ jobs:
       - name: Docker Login
         run: echo ${{ secrets.DOCKER_PASS }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
       - name: Docker Build Version
-        run: docker build -t allanweber/$APP_NAME:${{needs.build.outputs.app-version}} -f Dockerfile .
+        run: docker build -t allanweber/$APP_NAME:${{needs.build.outputs.app-version}} -f docker/Dockerfile .
       - name: Build and Push Version
         run: docker push allanweber/$APP_NAME:${{needs.build.outputs.app-version}}
 
@@ -56,6 +56,6 @@ jobs:
       - name: Docker Login
         run: echo ${{ secrets.DOCKER_PASS }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
       - name: Docker Build Latest
-        run: docker build -t allanweber/$APP_NAME:latest -f Dockerfile .
+        run: docker build -t allanweber/$APP_NAME:latest -f docker/Dockerfile .
       - name: Build and Push Latest
         run: docker push allanweber/$APP_NAME:latest
