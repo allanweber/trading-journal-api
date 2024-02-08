@@ -48,27 +48,39 @@ enum EntryType {
 }
 
 model Entry {
-  id               String      @id @default(cuid())
-  user             String      @db.VarChar(150)
-  portfolio        Portfolio   @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  id               String        @id @default(cuid())
+  user             String        @db.VarChar(150)
+  portfolio        Portfolio     @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   portfolioId      String
   date             DateTime
-  price            Float       @db.DoublePrecision
+  price            Float         @db.DoublePrecision
   entryType        EntryType
   orderStatus      OrderStatus
-  orderRef         String      @db.VarChar(50)
-  notes            String?     @db.VarChar(255)
-  symbol           String?     @db.VarChar(50)
+  orderRef         String        @db.VarChar(50)
+  notes            String?       @db.VarChar(255)
+  symbol           String?       @db.VarChar(50)
   direction        Direction?
-  size             Float?      @db.DoublePrecision
-  profit           Float?      @db.DoublePrecision
-  loss             Float?      @db.DoublePrecision
-  costs            Float?      @db.DoublePrecision
+  size             Float?        @db.DoublePrecision
+  profit           Float?        @db.DoublePrecision
+  loss             Float?        @db.DoublePrecision
+  costs            Float?        @db.DoublePrecision
   exitDate         DateTime?
-  exitPrice        Float?      @db.DoublePrecision
+  exitPrice        Float?        @db.DoublePrecision
   //Calculated fields
-  result           Float?      @db.DoublePrecision
-  grossResult      Float?      @db.DoublePrecision
-  returnPercentage Float?      @db.DoublePrecision
-  plannedRR        Float?      @db.DoublePrecision
+  result           Float?        @db.DoublePrecision
+  grossResult      Float?        @db.DoublePrecision
+  returnPercentage Float?        @db.DoublePrecision
+  plannedRR        Float?        @db.DoublePrecision
+  //Relations
+  images           EntryImages[]
+}
+
+model EntryImages {
+  imageId  String @db.VarChar(255)
+  entry    Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId  String
+  url      String @db.Text
+  fileName String @db.VarChar(255)
+
+  @@unique([imageId])
 }

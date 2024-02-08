@@ -8,6 +8,7 @@ import { feesEntriesSuite } from "./fees.entries.suite";
 import { multipleStockEntriesSuite } from "./multiple-stocks.entries.suite";
 import { portfoliosSuite } from "./portfolios.suite";
 import { stockEntriesSuite } from "./stock.entries.suite";
+import { stockImagesSuite } from "./stock.images.suite";
 import { taxesEntriesSuite } from "./taxes.entries.suite";
 import { withdrawalEntriesSuite } from "./withdrawal.entries.suite";
 
@@ -43,4 +44,5 @@ describe("Manage Trades", () => {
   dividendEntriesSuite(app);
   stockEntriesSuite(app);
   multipleStockEntriesSuite(app);
+  stockImagesSuite(app);
 });

@@ -38,13 +38,14 @@
   "dependencies": {
     "@kinde-oss/kinde-node-express": "^1.0.12",
     "@prisma/client": "^5.7.1",
+    "cloudinary": "^2.0.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
     "morgan": "^1.10.0",
-    "zod": "^3.22.4",
-    "dotenv": "^16.3.1",
-    "winston": "^3.11.0"
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
   }
 }
