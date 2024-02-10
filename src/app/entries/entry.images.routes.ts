@@ -1,12 +1,17 @@
 import { Response, Router } from "express";
+import multer, { memoryStorage } from "multer";
 import protectRoute from "../../routes/protected";
 import { Route } from "../../routes/route";
 
 import cloudinary from "cloudinary";
 import { prismaClient } from "../../loaders/prisma";
 import portfolioRequired, { AuthenticatedRequestWithPortfolio } from "../../routes/portfolioRequired";
-import { imageUploadedSchema } from "../model/fileUploaded";
 import { getEntry } from "./entries.service";
+
+const storage = memoryStorage();
+const upload = multer({
+  storage,
+});
 
 export class EntryImagesRoutes extends Route {
   constructor(app: Router) {
@@ -15,7 +20,11 @@ export class EntryImagesRoutes extends Route {
   }
 
   public registerRoutes = (): void => {
-    this.route.post("/:portfolioId/entries/:id/images", [protectRoute, portfolioRequired], this.upload);
+    this.route.post(
+      "/:portfolioId/entries/:id/images",
+      [protectRoute, portfolioRequired, upload.single("file")],
+      this.upload
+    );
     this.route.get("/:portfolioId/entries/:id/images", [protectRoute, portfolioRequired], this.images);
     this.route.delete("/:portfolioId/entries/:id/images/:imageId", [protectRoute, portfolioRequired], this.delete);
   };
@@ -29,21 +38,29 @@ export class EntryImagesRoutes extends Route {
       return res.status(404).json({ message: "Entry not found" });
     }
 
-    const uploadedImage = imageUploadedSchema.safeParse(req.body);
-    if (uploadedImage.success === false) {
-      return res.status(400).json(uploadedImage.error);
+    try {
+      const b64 = Buffer.from(req.file.buffer).toString("base64");
+      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+      const upload = await cloudinary.v2.uploader.upload(dataURI, {
+        resource_type: "image",
+        folder: `${req.email}/${id}`,
+        timestamp: Math.round(new Date().getTime() / 1000),
+      });
+
+      const imageResponse = await prismaClient.entryImages.create({
+        data: {
+          imageId: upload.public_id,
+          entryId: id,
+          url: upload.secure_url,
+          fileName: req.file.originalname,
+        },
+      });
+
+      return res.status(201).json(imageResponse);
+    } catch (error) {
+      return res.status(500).json(JSON.stringify(error));
     }
-
-    const imageResponse = await prismaClient.entryImages.create({
-      data: {
-        imageId: uploadedImage.data.imageId,
-        entryId: id,
-        url: uploadedImage.data.url,
-        fileName: uploadedImage.data.fileName,
-      },
-    });
-
-    return res.status(201).json(imageResponse);
   };
 
   private images = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
