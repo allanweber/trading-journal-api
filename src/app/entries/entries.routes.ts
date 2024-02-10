@@ -7,6 +7,7 @@ import logger from "../../logger";
 import portfolioRequired, { AuthenticatedRequestWithPortfolio } from "../../routes/portfolioRequired";
 import { exitEntrySchema } from "../model/exit-entry";
 import {
+  changeEntryNotes,
   closeEntry,
   createEntry,
   deleteEntry,
@@ -30,6 +31,7 @@ export class EntriesRoutes extends Route {
     this.route.post("/:portfolioId/entries", [protectRoute, portfolioRequired], this.post);
     this.route.patch("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.patch);
     this.route.patch("/:portfolioId/entries/:id/close", [protectRoute, portfolioRequired], this.patchClose);
+    this.route.patch("/:portfolioId/entries/:id/notes", [protectRoute, portfolioRequired], this.patchNotes);
   };
 
   private getAll = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
@@ -136,6 +138,24 @@ export class EntriesRoutes extends Route {
       const response = await closeEntry(req.email, req.portfolioId, id, exitEntry.data);
 
       return res.status(200).json(response);
+    } catch (error) {
+      logger.error(error);
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
+  private patchNotes = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const entryById = await getEntry(req.email, req.portfolioId, id);
+      if (!entryById) {
+        return res.status(404).json({ message: "Entry not found" });
+      }
+
+      await changeEntryNotes(req.email, req.portfolioId, id, req.body.notes);
+
+      return res.status(200).json({ notes: req.body.notes });
     } catch (error) {
       logger.error(error);
       return res.status(500).json({ message: error.message });
