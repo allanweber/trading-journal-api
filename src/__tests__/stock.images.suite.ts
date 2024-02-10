@@ -111,4 +111,64 @@ export const stockImagesSuite = (app: express.Application) => {
     expect(images.status).toBe(200);
     expect(images.body).toHaveLength(0);
   });
+
+  it("should return the count of images when listing entries", async () => {
+    const portfolio = await createPortfolio();
+
+    const entryWithImage = await prismaClient.entry.create({
+      data: {
+        user: "mail@mail.com",
+        orderRef: "123",
+        portfolioId: portfolio.id,
+        entryType: EntryType.STOCK,
+        date: new Date(2001, 1, 2),
+        symbol: "AAPL",
+        size: 10,
+        price: 100,
+        direction: Direction.LONG,
+        orderStatus: OrderStatus.OPEN,
+      },
+    });
+
+    //Entry without images
+    await prismaClient.entry.create({
+      data: {
+        user: "mail@mail.com",
+        orderRef: "123",
+        portfolioId: portfolio.id,
+        entryType: EntryType.STOCK,
+        date: new Date(2001, 1, 1),
+        symbol: "AAPL",
+        size: 10,
+        price: 100,
+        direction: Direction.LONG,
+        orderStatus: OrderStatus.OPEN,
+      },
+    });
+
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: "imageId",
+      secure_url: "https://res.cloudinary.com/image/test-image.png",
+    });
+    await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entryWithImage.id}/images`)
+      .attach("file", testImage)
+      .expect(201);
+
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: "imageId2",
+      secure_url: "https://res.cloudinary.com/image/test-image.png",
+    });
+    await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entryWithImage.id}/images`)
+      .attach("file", testImage)
+      .expect(201);
+
+    // return all images
+    const entries = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries`);
+    expect(entries.status).toBe(200);
+    expect(entries.body.data).toHaveLength(2);
+    expect(entries.body.data[0]._count.images).toBe(2);
+    expect(entries.body.data[1]._count.images).toBe(0);
+  });
 };

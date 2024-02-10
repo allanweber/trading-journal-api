@@ -308,7 +308,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     const shortOpen = await request(app)
       .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
-        date: new Date(2001, 1, 1),
+        date: new Date(2001, 1, 4),
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
@@ -319,7 +319,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     const LongOpen = await request(app)
       .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
-        date: new Date(2001, 1, 1),
+        date: new Date(2001, 1, 3),
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
@@ -331,7 +331,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     const longWin = await request(app)
       .post(`/api/v1/portfolios/${portfolio.id}/entries`)
       .send({
-        date: new Date(2001, 1, 1),
+        date: new Date(2001, 1, 2),
         price: 1,
         size: 1,
         entryType: EntryType.STOCK,

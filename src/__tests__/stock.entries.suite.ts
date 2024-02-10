@@ -319,4 +319,49 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(closeResponse2.status).toBe(400);
     expect(closeResponse2.body.message).toBe("Cannot close a closed trade");
   });
+
+  it("Can change notes of open or closed trade", async () => {
+    const portfolio = await createPortfolio();
+
+    const createResponse = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: "AAPL",
+        direction: Direction.SHORT,
+        notes: "Notes",
+      });
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.body.notes).toBe("Notes");
+
+    //Update notes of open trade
+    const updateNotesOpen = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/notes`)
+      .send({
+        notes: "Updated Notes",
+      });
+    expect(updateNotesOpen.status).toBe(200);
+    expect(updateNotesOpen.body.notes).toBe("Updated Notes");
+
+    const closeResponse = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`)
+      .send({
+        exitDate: new Date(),
+        exitPrice: 300,
+      });
+    expect(closeResponse.status).toBe(200);
+    expect(closeResponse.body.notes).toBe("Updated Notes");
+
+    //Update notes of closed trade
+    const updateNotesClosed = await request(app)
+      .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/notes`)
+      .send({
+        notes: "Updated Notes closed",
+      });
+    expect(updateNotesClosed.status).toBe(200);
+    expect(updateNotesClosed.body.notes).toBe("Updated Notes closed");
+  });
 };

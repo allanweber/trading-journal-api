@@ -62,6 +62,9 @@ export const queryEntries = async (
     },
     include: {
       portfolio: true,
+      _count: {
+        select: { images: true },
+      },
     },
     orderBy: {
       date: "desc",
@@ -284,6 +287,19 @@ export const closeEntry = async (userEmail: string, portfolioId: string, entryId
     },
     data: {
       ...balanced,
+    },
+  });
+};
+
+export const changeEntryNotes = async (userEmail: string, portfolioId: string, entryId: string, notes: string) => {
+  return prismaClient.entry.update({
+    where: {
+      user: userEmail,
+      portfolioId: portfolioId,
+      id: entryId,
+    },
+    data: {
+      notes,
     },
   });
 };
