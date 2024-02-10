@@ -4,6 +4,8 @@ import request from "supertest";
 import { prismaClient } from "../loaders/prisma";
 import cloudinaryMock from "./cloudinaryMock";
 
+const testImage = `${__dirname}/__mocks__/test-image.png`;
+
 export const stockImagesSuite = (app: express.Application) => {
   const createPortfolio = async () => {
     return await prismaClient.portfolio.create({
@@ -35,54 +37,76 @@ export const stockImagesSuite = (app: express.Application) => {
         orderStatus: OrderStatus.OPEN,
       },
     });
+
     cloudinaryMock.v2.uploader.destroy.mockResolvedValue({ result: "success" });
     const destroySpy = jest.spyOn(cloudinaryMock.v2.uploader, "destroy");
+    const uploadSpy = jest.spyOn(cloudinaryMock.v2.uploader, "upload");
 
-    const image1 = await request(app).post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`).send({
-      imageId: "imageId",
-      url: "https://res.cloudinary.com/image/image1.png",
-      fileName: "Untitled.png",
+    // Upload Image 1
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: "imageId",
+      secure_url: "https://res.cloudinary.com/image/test-image.png",
     });
-    expect(image1.status).toBe(201);
+    const image1 = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`)
+      .attach("file", testImage)
+      .expect(201);
+
     expect(image1.body.imageId).toBe("imageId");
-    expect(image1.body.url).toBe("https://res.cloudinary.com/image/image1.png");
-    expect(image1.body.fileName).toBe("Untitled.png");
+    expect(image1.body.url).toBe("https://res.cloudinary.com/image/test-image.png");
+    expect(image1.body.fileName).toBe("test-image.png");
     expect(image1.body.entryId).toBe(entry.id);
 
-    const image2 = await request(app).post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`).send({
-      imageId: "imageId2",
-      url: "https://res.cloudinary.com/image/image2.png",
-      fileName: "Untitled2.png",
+    expect(uploadSpy).toHaveBeenCalled();
+
+    // Upload Image 2
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: "imageId2",
+      secure_url: "https://res.cloudinary.com/image/test-image.png",
     });
-    expect(image2.status).toBe(201);
+    const image2 = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`)
+      .attach("file", testImage)
+      .expect(201);
+
     expect(image2.body.imageId).toBe("imageId2");
-    expect(image2.body.url).toBe("https://res.cloudinary.com/image/image2.png");
-    expect(image2.body.fileName).toBe("Untitled2.png");
+    expect(image2.body.url).toBe("https://res.cloudinary.com/image/test-image.png");
+    expect(image2.body.fileName).toBe("test-image.png");
     expect(image2.body.entryId).toBe(entry.id);
 
+    expect(uploadSpy).toHaveBeenCalled();
+
+    // Get 2 Images
     let images = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`);
     expect(images.status).toBe(200);
     expect(images.body).toHaveLength(2);
 
+    // Delete Image 2
     const deleteImage2 = await request(app).delete(
       `/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images/${image2.body.imageId}`
     );
     expect(deleteImage2.status).toBe(200);
     expect(deleteImage2.body).toBe("imageId2");
 
+    // Check if destroy was called
     expect(destroySpy).toHaveBeenCalledWith("imageId2", expect.any(Function));
 
+    // Get 1 Image
     images = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`);
     expect(images.status).toBe(200);
     expect(images.body).toHaveLength(1);
 
+    // Delete Image 1
     const deleteImage1 = await request(app).delete(
       `/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images/${image1.body.imageId}`
     );
     expect(deleteImage1.status).toBe(200);
     expect(deleteImage1.body).toBe("imageId");
+
+    // Check if destroy was called
     expect(destroySpy).toHaveBeenCalledWith("imageId2", expect.any(Function));
 
+    // Get 0 Images
     images = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`);
     expect(images.status).toBe(200);
     expect(images.body).toHaveLength(0);
