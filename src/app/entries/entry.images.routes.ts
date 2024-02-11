@@ -5,6 +5,7 @@ import { Route } from '../../routes/route';
 
 import cloudinary from 'cloudinary';
 import { prismaClient } from '../../loaders/prisma';
+import logger from '../../logger';
 import portfolioRequired, { AuthenticatedRequestWithPortfolio } from '../../routes/portfolioRequired';
 import { getEntry } from './entries.service';
 
@@ -107,9 +108,27 @@ export class EntryImagesRoutes extends Route {
 
     await cloudinary.v2.uploader.destroy(imageId, function (error) {
       if (error) {
+        logger.error(error);
         return res.status(500).json({ message: 'Error deleting image' });
       }
     });
+
+    const result = await cloudinary.v2.api.resources(
+      { type: 'upload', prefix: `${req.email}/${id}` },
+      function (error) {
+        if (error) {
+          logger.error(error);
+        }
+      }
+    );
+
+    if (result && result.resources.length === 0) {
+      await cloudinary.v2.api.delete_folder(`${req.email}/${id}`, function (error) {
+        if (error) {
+          logger.error(error);
+        }
+      });
+    }
 
     await prismaClient.entryImages.delete({
       where: {
