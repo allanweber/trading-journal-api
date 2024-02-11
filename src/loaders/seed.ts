@@ -1,3 +1,4 @@
+import logger from '../logger';
 import { prismaClient } from './prisma';
 
 const plans = [
@@ -9,7 +10,7 @@ const plans = [
 ];
 
 export default async () => {
-  console.log('Seeding database');
+  logger.info('Seeding database');
   plans.forEach(async (plan) => {
     await prismaClient.plans.upsert({
       where: { id: plan.id },
