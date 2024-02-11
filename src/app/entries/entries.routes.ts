@@ -1,11 +1,11 @@
-import { Response, Router } from "express";
-import protectRoute from "../../routes/protected";
-import { Route } from "../../routes/route";
+import { Response, Router } from 'express';
+import protectRoute from '../../routes/protected';
+import { Route } from '../../routes/route';
 
-import { Entry, OrderStatus } from "@prisma/client";
-import logger from "../../logger";
-import portfolioRequired, { AuthenticatedRequestWithPortfolio } from "../../routes/portfolioRequired";
-import { exitEntrySchema } from "../model/exit-entry";
+import { Entry, OrderStatus } from '@prisma/client';
+import logger from '../../logger';
+import portfolioRequired, { AuthenticatedRequestWithPortfolio } from '../../routes/portfolioRequired';
+import { exitEntrySchema } from '../model/exit-entry';
 import {
   changeEntryNotes,
   closeEntry,
@@ -15,32 +15,32 @@ import {
   getPortfolioBalances,
   queryEntries,
   updateEntry,
-} from "./entries.service";
+} from './entries.service';
 
 export class EntriesRoutes extends Route {
   constructor(app: Router) {
-    super(app, "portfolios");
+    super(app, 'portfolios');
     this.registerRoutes();
   }
 
   public registerRoutes = (): void => {
-    this.route.get("/:portfolioId/entries", [protectRoute, portfolioRequired], this.getAll);
-    this.route.get("/:portfolioId/entries/balances", [protectRoute, portfolioRequired], this.getAllPortfoliosBalances);
-    this.route.get("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.get);
-    this.route.delete("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.delete);
-    this.route.post("/:portfolioId/entries", [protectRoute, portfolioRequired], this.post);
-    this.route.patch("/:portfolioId/entries/:id", [protectRoute, portfolioRequired], this.patch);
-    this.route.patch("/:portfolioId/entries/:id/close", [protectRoute, portfolioRequired], this.patchClose);
-    this.route.patch("/:portfolioId/entries/:id/notes", [protectRoute, portfolioRequired], this.patchNotes);
+    this.route.get('/:portfolioId/entries', [protectRoute, portfolioRequired], this.getAll);
+    this.route.get('/:portfolioId/entries/balances', [protectRoute, portfolioRequired], this.getAllPortfoliosBalances);
+    this.route.get('/:portfolioId/entries/:id', [protectRoute, portfolioRequired], this.get);
+    this.route.delete('/:portfolioId/entries/:id', [protectRoute, portfolioRequired], this.delete);
+    this.route.post('/:portfolioId/entries', [protectRoute, portfolioRequired], this.post);
+    this.route.patch('/:portfolioId/entries/:id', [protectRoute, portfolioRequired], this.patch);
+    this.route.patch('/:portfolioId/entries/:id/close', [protectRoute, portfolioRequired], this.patchClose);
+    this.route.patch('/:portfolioId/entries/:id/notes', [protectRoute, portfolioRequired], this.patchNotes);
   };
 
   private getAll = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
     const { query, type, status, direction, pageSize, page } = req.query;
 
     const queryFilter = query ? query.toString() : undefined;
-    const entryType = type ? (type as string).split(",") : undefined;
-    const entryStatuses = status ? (status as string).split(",") : undefined;
-    const tradeDirection = direction ? (direction as string).split(",") : undefined;
+    const entryType = type ? (type as string).split(',') : undefined;
+    const entryStatuses = status ? (status as string).split(',') : undefined;
+    const tradeDirection = direction ? (direction as string).split(',') : undefined;
     const size = pageSize ? parseInt(pageSize as string) : 10;
     const pageNumber = page ? parseInt(page as string) : 1;
 
@@ -70,18 +70,23 @@ export class EntriesRoutes extends Route {
     const entry = await getEntry(req.email, req.portfolioId, id);
 
     if (!entry) {
-      return res.status(404).json({ message: "Entry not found" });
+      return res.status(404).json({ message: 'Entry not found' });
     }
 
     return res.status(200).json(entry);
   };
 
   private delete = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
-    const { id } = req.params;
+    try {
+      const { id } = req.params;
 
-    await deleteEntry(req.email, req.portfolioId, id);
+      await deleteEntry(req.email, req.portfolioId, id);
 
-    return res.status(200).json(id);
+      return res.status(200).json(id);
+    } catch (error) {
+      logger.error(error);
+      return res.status(500).json({ message: error.message });
+    }
   };
 
   private post = async (req: AuthenticatedRequestWithPortfolio, res: Response) => {
@@ -101,7 +106,7 @@ export class EntriesRoutes extends Route {
 
       const entryById = await getEntry(req.email, req.portfolioId, id);
       if (!entryById) {
-        return res.status(404).json({ message: "Entry not found" });
+        return res.status(404).json({ message: 'Entry not found' });
       }
 
       const response = await updateEntry(req.email, req.portfolioId, id, req.body as Entry);
@@ -123,16 +128,16 @@ export class EntriesRoutes extends Route {
       }
 
       if (exitEntry.data.exitDate && new Date(exitEntry.data.exitDate) > new Date()) {
-        return res.status(400).json({ message: "Exit date cannot be in the future" });
+        return res.status(400).json({ message: 'Exit date cannot be in the future' });
       }
 
       const entryById = await getEntry(req.email, req.portfolioId, id);
       if (!entryById) {
-        return res.status(400).json({ message: "Entry not found" });
+        return res.status(400).json({ message: 'Entry not found' });
       }
 
       if (entryById.orderStatus === OrderStatus.CLOSED) {
-        return res.status(400).json({ message: "Cannot close a closed trade" });
+        return res.status(400).json({ message: 'Cannot close a closed trade' });
       }
 
       const response = await closeEntry(req.email, req.portfolioId, id, exitEntry.data);
@@ -150,7 +155,7 @@ export class EntriesRoutes extends Route {
 
       const entryById = await getEntry(req.email, req.portfolioId, id);
       if (!entryById) {
-        return res.status(404).json({ message: "Entry not found" });
+        return res.status(404).json({ message: 'Entry not found' });
       }
 
       await changeEntryNotes(req.email, req.portfolioId, id, req.body.notes);

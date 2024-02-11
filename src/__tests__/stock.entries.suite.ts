@@ -1,24 +1,25 @@
-import { Direction, EntryType, OrderStatus } from "@prisma/client";
-import express from "express";
-import request from "supertest";
-import { prismaClient } from "../loaders/prisma";
+import { Direction, EntryType, OrderStatus } from '@prisma/client';
+import express from 'express';
+import request from 'supertest';
+import { prismaClient } from '../loaders/prisma';
+import cloudinaryMock from './cloudinaryMock';
 
 export const stockEntriesSuite = (app: express.Application) => {
   const createPortfolio = async () => {
     return await prismaClient.portfolio.create({
       data: {
-        user: "mail@mail.com",
-        name: "Portfolio Test",
-        description: "Portfolio Test Description",
+        user: 'mail@mail.com',
+        name: 'Portfolio Test',
+        description: 'Portfolio Test Description',
         startDate: new Date(2001, 1, 1),
         startBalance: 1000,
-        currency: "USD",
+        currency: 'USD',
         currentBalance: 1000,
       },
     });
   };
 
-  it("should create, return, edit and delete a Stock", async () => {
+  it('should create, return, edit and delete a Stock', async () => {
     const portfolio = await createPortfolio();
 
     const createResponse = await request(app)
@@ -28,14 +29,14 @@ export const stockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.SHORT,
       });
     expect(createResponse.status).toBe(201);
     expect(createResponse.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(createResponse.body.entryType).toBe(EntryType.STOCK);
     expect(new Date(createResponse.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
-    expect(createResponse.body.symbol).toBe("AAPL");
+    expect(createResponse.body.symbol).toBe('AAPL');
     expect(createResponse.body.size).toBe(1);
     expect(createResponse.body.price).toBe(100);
     expect(createResponse.body.direction).toBe(Direction.SHORT);
@@ -61,10 +62,10 @@ export const stockEntriesSuite = (app: express.Application) => {
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
-        notes: "Updated Notes",
+        notes: 'Updated Notes',
         price: 200,
         size: 2,
-        symbol: "MSFT",
+        symbol: 'MSFT',
         direction: Direction.LONG,
         costs: 10,
         profit: 300,
@@ -74,11 +75,11 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updateResponse.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(updateResponse.body.entryType).toBe(EntryType.STOCK);
     expect(new Date(updateResponse.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
-    expect(updateResponse.body.symbol).toBe("MSFT");
+    expect(updateResponse.body.symbol).toBe('MSFT');
     expect(updateResponse.body.size).toBe(2);
     expect(updateResponse.body.price).toBe(200);
     expect(updateResponse.body.direction).toBe(Direction.LONG);
-    expect(updateResponse.body.notes).toBe("Updated Notes");
+    expect(updateResponse.body.notes).toBe('Updated Notes');
     expect(updateResponse.body.profit).toBe(300);
     expect(updateResponse.body.loss).toBe(150);
     expect(updateResponse.body.costs).toBe(10);
@@ -93,21 +94,21 @@ export const stockEntriesSuite = (app: express.Application) => {
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
-        notes: "Updated Notes",
+        notes: 'Updated Notes',
         price: 200,
         size: 2,
-        symbol: "MSFT",
+        symbol: 'MSFT',
         direction: Direction.LONG,
       });
     expect(updateResponse2.status).toBe(200);
     expect(updateResponse2.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(updateResponse2.body.entryType).toBe(EntryType.STOCK);
     expect(new Date(updateResponse2.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
-    expect(updateResponse2.body.symbol).toBe("MSFT");
+    expect(updateResponse2.body.symbol).toBe('MSFT');
     expect(updateResponse2.body.size).toBe(2);
     expect(updateResponse2.body.price).toBe(200);
     expect(updateResponse2.body.direction).toBe(Direction.LONG);
-    expect(updateResponse2.body.notes).toBe("Updated Notes");
+    expect(updateResponse2.body.notes).toBe('Updated Notes');
     expect(updateResponse2.body.profit).toBe(null);
     expect(updateResponse2.body.loss).toBe(null);
     expect(updateResponse2.body.costs).toBe(null);
@@ -122,10 +123,10 @@ export const stockEntriesSuite = (app: express.Application) => {
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
-        notes: "Updated Notes",
+        notes: 'Updated Notes',
         price: 200,
         size: 2,
-        symbol: "MSFT",
+        symbol: 'MSFT',
         direction: Direction.LONG,
         costs: 10,
         profit: 300,
@@ -135,11 +136,11 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updateResponse.body.orderStatus).toBe(OrderStatus.OPEN);
     expect(updateResponse.body.entryType).toBe(EntryType.STOCK);
     expect(new Date(updateResponse.body.date).toDateString()).toBe(new Date(2001, 1, 1).toDateString());
-    expect(updateResponse.body.symbol).toBe("MSFT");
+    expect(updateResponse.body.symbol).toBe('MSFT');
     expect(updateResponse.body.size).toBe(2);
     expect(updateResponse.body.price).toBe(200);
     expect(updateResponse.body.direction).toBe(Direction.LONG);
-    expect(updateResponse.body.notes).toBe("Updated Notes");
+    expect(updateResponse.body.notes).toBe('Updated Notes');
     expect(updateResponse.body.profit).toBe(300);
     expect(updateResponse.body.loss).toBe(150);
     expect(updateResponse.body.costs).toBe(10);
@@ -166,7 +167,7 @@ export const stockEntriesSuite = (app: express.Application) => {
         exitPrice: 300,
       });
     expect(invalidCloseResponse2.status).toBe(500);
-    expect(invalidCloseResponse2.body.message).toBe("Exit date must be after entry date.");
+    expect(invalidCloseResponse2.body.message).toBe('Exit date must be after entry date.');
 
     // Close trade with profit
     let closeResponse = await request(app)
@@ -178,11 +179,11 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(closeResponse.status).toBe(200);
     expect(closeResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
     expect(closeResponse.body.entryType).toBe(EntryType.STOCK);
-    expect(closeResponse.body.symbol).toBe("MSFT");
+    expect(closeResponse.body.symbol).toBe('MSFT');
     expect(closeResponse.body.size).toBe(2);
     expect(closeResponse.body.price).toBe(200);
     expect(closeResponse.body.direction).toBe(Direction.LONG);
-    expect(closeResponse.body.notes).toBe("Updated Notes");
+    expect(closeResponse.body.notes).toBe('Updated Notes');
     expect(closeResponse.body.profit).toBe(300);
     expect(closeResponse.body.loss).toBe(150);
     expect(closeResponse.body.costs).toBe(10);
@@ -209,7 +210,7 @@ export const stockEntriesSuite = (app: express.Application) => {
         exitPrice: 300,
       });
     expect(closeResponse.status).toBe(400);
-    expect(closeResponse.body.message).toBe("Cannot close a closed trade");
+    expect(closeResponse.body.message).toBe('Cannot close a closed trade');
 
     updatedPortfolio = await prismaClient.portfolio.findUnique({
       where: {
@@ -235,7 +236,7 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updatedPortfolio.currentBalance).toBe(1000);
   });
 
-  it("Cannot close trade in the future", async () => {
+  it('Cannot close trade in the future', async () => {
     const portfolio = await createPortfolio();
 
     const createResponse = await request(app)
@@ -245,7 +246,7 @@ export const stockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.SHORT,
       });
     expect(createResponse.status).toBe(201);
@@ -258,10 +259,10 @@ export const stockEntriesSuite = (app: express.Application) => {
         exitPrice: 300,
       });
     expect(closeResponse.status).toBe(400);
-    expect(closeResponse.body.message).toBe("Exit date cannot be in the future");
+    expect(closeResponse.body.message).toBe('Exit date cannot be in the future');
   });
 
-  it("Cannot close again a closed trade, when updating, only notes can change", async () => {
+  it('Cannot close again a closed trade, when updating, only notes can change', async () => {
     const portfolio = await createPortfolio();
 
     const createResponse = await request(app)
@@ -271,9 +272,9 @@ export const stockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.SHORT,
-        notes: "Notes",
+        notes: 'Notes',
       });
     expect(createResponse.status).toBe(201);
 
@@ -284,17 +285,17 @@ export const stockEntriesSuite = (app: express.Application) => {
         exitPrice: 300,
       });
     expect(closeResponse.status).toBe(200);
-    expect(closeResponse.body.notes).toBe("Notes");
+    expect(closeResponse.body.notes).toBe('Notes');
 
     // Update closed trade
     const updateResponse = await request(app)
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`)
       .send({
         entryType: EntryType.WITHDRAWAL, //will not change
-        notes: "Updated Notes",
+        notes: 'Updated Notes',
         price: 200,
         size: 2,
-        symbol: "MSFT",
+        symbol: 'MSFT',
         direction: Direction.LONG,
         costs: 10,
         profit: 300,
@@ -303,11 +304,11 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.orderStatus).toBe(OrderStatus.CLOSED);
     expect(updateResponse.body.entryType).toBe(EntryType.STOCK);
-    expect(updateResponse.body.symbol).toBe("AAPL");
+    expect(updateResponse.body.symbol).toBe('AAPL');
     expect(updateResponse.body.size).toBe(1);
     expect(updateResponse.body.price).toBe(100);
     expect(updateResponse.body.direction).toBe(Direction.SHORT);
-    expect(updateResponse.body.notes).toBe("Updated Notes");
+    expect(updateResponse.body.notes).toBe('Updated Notes');
 
     // Close closed trade
     const closeResponse2 = await request(app)
@@ -317,10 +318,10 @@ export const stockEntriesSuite = (app: express.Application) => {
         exitPrice: 300,
       });
     expect(closeResponse2.status).toBe(400);
-    expect(closeResponse2.body.message).toBe("Cannot close a closed trade");
+    expect(closeResponse2.body.message).toBe('Cannot close a closed trade');
   });
 
-  it("Can change notes of open or closed trade", async () => {
+  it('Can change notes of open or closed trade', async () => {
     const portfolio = await createPortfolio();
 
     const createResponse = await request(app)
@@ -330,21 +331,21 @@ export const stockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.SHORT,
-        notes: "Notes",
+        notes: 'Notes',
       });
     expect(createResponse.status).toBe(201);
-    expect(createResponse.body.notes).toBe("Notes");
+    expect(createResponse.body.notes).toBe('Notes');
 
     //Update notes of open trade
     const updateNotesOpen = await request(app)
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/notes`)
       .send({
-        notes: "Updated Notes",
+        notes: 'Updated Notes',
       });
     expect(updateNotesOpen.status).toBe(200);
-    expect(updateNotesOpen.body.notes).toBe("Updated Notes");
+    expect(updateNotesOpen.body.notes).toBe('Updated Notes');
 
     const closeResponse = await request(app)
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/close`)
@@ -353,15 +354,57 @@ export const stockEntriesSuite = (app: express.Application) => {
         exitPrice: 300,
       });
     expect(closeResponse.status).toBe(200);
-    expect(closeResponse.body.notes).toBe("Updated Notes");
+    expect(closeResponse.body.notes).toBe('Updated Notes');
 
     //Update notes of closed trade
     const updateNotesClosed = await request(app)
       .patch(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}/notes`)
       .send({
-        notes: "Updated Notes closed",
+        notes: 'Updated Notes closed',
       });
     expect(updateNotesClosed.status).toBe(200);
-    expect(updateNotesClosed.body.notes).toBe("Updated Notes closed");
+    expect(updateNotesClosed.body.notes).toBe('Updated Notes closed');
+  });
+
+  it('Delete a entry with images must delete cloudinary images and folder', async () => {
+    const portfolio = await createPortfolio();
+
+    const createResponse = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries`)
+      .send({
+        date: new Date(2001, 1, 1),
+        price: 100,
+        size: 1,
+        entryType: EntryType.STOCK,
+        symbol: 'AAPL',
+        direction: Direction.SHORT,
+      });
+    expect(createResponse.status).toBe(201);
+
+    await prismaClient.entryImages.create({
+      data: {
+        entryId: createResponse.body.id,
+        imageId: 'imageId',
+        url: 'url',
+        fileName: 'fileName',
+      },
+    });
+
+    cloudinaryMock.v2.api.delete_resources_by_prefix.mockResolvedValue({ result: 'success' });
+    cloudinaryMock.v2.api.delete_folder.mockResolvedValue({ result: 'success' });
+
+    const spyDeleteResourcesByPrefix = jest.spyOn(cloudinaryMock.v2.api, 'delete_resources_by_prefix');
+    const deleteFolderSpy = jest.spyOn(cloudinaryMock.v2.api, 'delete_folder');
+
+    await request(app).delete(`/api/v1/portfolios/${portfolio.id}/entries/${createResponse.body.id}`).expect(200);
+
+    expect(spyDeleteResourcesByPrefix).toHaveBeenCalledWith(
+      `${createResponse.body.user}/${createResponse.body.id}`,
+      expect.any(Function)
+    );
+    expect(deleteFolderSpy).toHaveBeenCalledWith(
+      `${createResponse.body.user}/${createResponse.body.id}`,
+      expect.any(Function)
+    );
   });
 };

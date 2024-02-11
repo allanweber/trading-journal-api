@@ -1,10 +1,12 @@
-import { Entry, EntryType, OrderStatus } from "@prisma/client";
-import { prismaClient } from "../../loaders/prisma";
-import { ExitEntry } from "../model/exit-entry";
-import { Paginated, Pagination } from "../model/pagination";
-import { updatePortfolioBalance } from "../portfolio/portfolio.service";
-import { getPortfolioBalance } from "./../portfolio/portfolio.service";
-import { balanceEntry, calculatePlannedRR } from "./balance";
+import { Entry, EntryType, OrderStatus } from '@prisma/client';
+import cloudinary from 'cloudinary';
+import { prismaClient } from '../../loaders/prisma';
+import logger from '../../logger';
+import { ExitEntry } from '../model/exit-entry';
+import { Paginated, Pagination } from '../model/pagination';
+import { updatePortfolioBalance } from '../portfolio/portfolio.service';
+import { getPortfolioBalance } from './../portfolio/portfolio.service';
+import { balanceEntry, calculatePlannedRR } from './balance';
 
 export const queryEntries = async (
   userEmail: string,
@@ -18,7 +20,7 @@ export const queryEntries = async (
 ) => {
   let queries = {};
   if (query) {
-    queries = { symbol: { contains: query, mode: "insensitive" } };
+    queries = { symbol: { contains: query, mode: 'insensitive' } };
   }
   if (entryType) {
     queries = {
@@ -29,13 +31,13 @@ export const queryEntries = async (
 
   if (statuses) {
     const resultQueries = [];
-    if (statuses.includes("OPEN")) {
+    if (statuses.includes('OPEN')) {
       resultQueries.push({ result: { equals: null } });
     }
-    if (statuses.includes("LOSS")) {
+    if (statuses.includes('LOSS')) {
       resultQueries.push({ result: { lt: 0 } });
     }
-    if (statuses.includes("WIN")) {
+    if (statuses.includes('WIN')) {
       resultQueries.push({ result: { gt: 0 } });
     }
     queries = {
@@ -67,7 +69,7 @@ export const queryEntries = async (
       },
     },
     orderBy: {
-      date: "desc",
+      date: 'desc',
     },
     skip: pageSize * (page - 1),
     take: pageSize,
@@ -100,7 +102,7 @@ export const getPortfolioBalances = async (userEmail: string, portfolioId: strin
       portfolio: true,
     },
     orderBy: {
-      date: "asc",
+      date: 'asc',
     },
   });
 };
@@ -125,6 +127,9 @@ export const deleteEntry = async (userEmail: string, portfolioId: string, id: st
       portfolioId,
       user: userEmail,
     },
+    include: {
+      images: true,
+    },
   });
 
   if (entry.orderStatus === OrderStatus.CLOSED) {
@@ -133,6 +138,20 @@ export const deleteEntry = async (userEmail: string, portfolioId: string, id: st
       throw new Error(`Portfolio id ${portfolioId} does not exist.`);
     }
     await updatePortfolioBalance(portfolioId, entry.result * -1);
+  }
+
+  if (entry.images.length > 0) {
+    await cloudinary.v2.api.delete_resources_by_prefix(`${userEmail}/${id}`, function (error) {
+      if (error) {
+        logger.error(error);
+      }
+    });
+
+    await cloudinary.v2.api.delete_folder(`${userEmail}/${id}`, function (error) {
+      if (error) {
+        logger.error(error);
+      }
+    });
   }
 
   return await prismaClient.entry.delete({
