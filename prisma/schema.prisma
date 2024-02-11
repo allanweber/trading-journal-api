@@ -84,3 +84,21 @@ model EntryImages {
 
   @@unique([imageId])
 }
+
+model Plans {
+  id    String  @db.VarChar(255)
+  name  String  @db.VarChar(50)
+  price Float   @db.DoublePrecision
+  users Users[]
+
+  @@unique([id])
+}
+
+model Users {
+  email       String   @db.VarChar(255)
+  planId      String?
+  currentPlan Plans?   @relation(fields: [planId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([email])
+}
