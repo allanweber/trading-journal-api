@@ -40,6 +40,8 @@ export const stockImagesSuite = (app: express.Application) => {
     });
 
     cloudinaryMock.v2.uploader.destroy.mockResolvedValue({ result: 'success' });
+    cloudinaryMock.v2.api.resources.mockResolvedValue({ resources: [] });
+    cloudinaryMock.v2.api.delete_folder.mockResolvedValue({ result: 'success' });
     const destroySpy = jest.spyOn(cloudinaryMock.v2.uploader, 'destroy');
     const uploadSpy = jest.spyOn(cloudinaryMock.v2.uploader, 'upload');
 
@@ -199,5 +201,98 @@ export const stockImagesSuite = (app: express.Application) => {
     expect(imageResponse.body.message).toBe('File too large, max 250kb is allowed');
 
     expect(uploadSpy).not.toHaveBeenCalled();
+  });
+
+  it('Should not delete a cloudinary folder because it is not empty', async () => {
+    const portfolio = await createPortfolio();
+    const entry = await prismaClient.entry.create({
+      data: {
+        user: 'mail@mail.com',
+        orderRef: '123',
+        portfolioId: portfolio.id,
+        entryType: EntryType.STOCK,
+        date: new Date(2001, 1, 1),
+        symbol: 'AAPL',
+        size: 10,
+        price: 100,
+        direction: Direction.LONG,
+        orderStatus: OrderStatus.OPEN,
+      },
+    });
+
+    cloudinaryMock.v2.uploader.destroy.mockResolvedValue({ result: 'success' });
+    cloudinaryMock.v2.api.resources.mockResolvedValue({
+      resources: [{ public_id: 'imageId2', secure_url: 'https://res.cloudinary.com/image/test-image.png' }],
+    });
+
+    const destroySpy = jest.spyOn(cloudinaryMock.v2.uploader, 'destroy');
+    const uploadSpy = jest.spyOn(cloudinaryMock.v2.uploader, 'upload');
+    const deleteFolderSpy = jest.spyOn(cloudinaryMock.v2.api, 'delete_folder');
+
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: 'imageId',
+      secure_url: 'https://res.cloudinary.com/image/test-image.png',
+    });
+    const image1 = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`)
+      .attach('file', testImage)
+      .expect(201);
+    expect(uploadSpy).toHaveBeenCalled();
+
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: 'imageId2',
+      secure_url: 'https://res.cloudinary.com/image/test-image.png',
+    });
+    await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`)
+      .attach('file', testImage)
+      .expect(201);
+    expect(uploadSpy).toHaveBeenCalled();
+
+    await request(app).delete(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images/${image1.body.imageId}`);
+    expect(destroySpy).toHaveBeenCalledWith('imageId', expect.any(Function));
+
+    expect(deleteFolderSpy).not.toHaveBeenCalled();
+  });
+
+  it('Should delete a cloudinary folder when it is empty', async () => {
+    const portfolio = await createPortfolio();
+    const entry = await prismaClient.entry.create({
+      data: {
+        user: 'mail@mail.com',
+        orderRef: '123',
+        portfolioId: portfolio.id,
+        entryType: EntryType.STOCK,
+        date: new Date(2001, 1, 1),
+        symbol: 'AAPL',
+        size: 10,
+        price: 100,
+        direction: Direction.LONG,
+        orderStatus: OrderStatus.OPEN,
+      },
+    });
+
+    cloudinaryMock.v2.uploader.destroy.mockResolvedValue({ result: 'success' });
+    cloudinaryMock.v2.api.resources.mockResolvedValue({ resources: [] });
+    cloudinaryMock.v2.api.delete_folder.mockResolvedValue({ result: 'success' });
+
+    const destroySpy = jest.spyOn(cloudinaryMock.v2.uploader, 'destroy');
+    const uploadSpy = jest.spyOn(cloudinaryMock.v2.uploader, 'upload');
+    const deleteFolderSpy = jest.spyOn(cloudinaryMock.v2.api, 'delete_folder');
+
+    cloudinaryMock.v2.uploader.upload.mockResolvedValueOnce({
+      public_id: 'imageId',
+      secure_url: 'https://res.cloudinary.com/image/test-image.png',
+    });
+    const image1 = await request(app)
+      .post(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images`)
+      .attach('file', testImage)
+      .expect(201);
+    expect(uploadSpy).toHaveBeenCalled();
+
+    await request(app).delete(`/api/v1/portfolios/${portfolio.id}/entries/${entry.id}/images/${image1.body.imageId}`);
+    expect(destroySpy).toHaveBeenCalledWith('imageId', expect.any(Function));
+
+    expect(deleteFolderSpy).toHaveBeenCalledWith(`${entry.user}/${entry.id}`, expect.any(Function));
   });
 };
