@@ -133,10 +133,6 @@ export const deleteEntry = async (userEmail: string, portfolioId: string, id: st
   });
 
   if (entry.orderStatus === OrderStatus.CLOSED) {
-    const balance = await getPortfolioBalance(userEmail, portfolioId);
-    if (!balance) {
-      throw new Error(`Portfolio id ${portfolioId} does not exist.`);
-    }
     await updatePortfolioBalance(portfolioId, entry.result * -1);
   }
 
