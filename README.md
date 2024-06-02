@@ -1,5 +1,15 @@
 # Trading Journal API
 
+## Docker Local
+
+### Local Postgres
+
+`docker run -d --name trading-journal-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=trading-journal -p 5432:5432 -d postgres:13.3-alpine`
+
+### Apply Migrations
+
+`npx prisma migrate dev`
+
 ## Prisma
 
 ### Migration
