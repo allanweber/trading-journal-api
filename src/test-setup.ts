@@ -1,12 +1,12 @@
-import { PostgreSqlContainer } from "@testcontainers/postgresql";
-import { execSync } from "child_process";
-import { Wait } from "testcontainers";
+import { PostgreSqlContainer } from '@testcontainers/postgresql';
+import { execSync } from 'child_process';
+import { Wait } from 'testcontainers';
 
 let container;
 
 export async function setupTestContainer() {
   container = await new PostgreSqlContainer()
-    .withWaitStrategy(Wait.forLogMessage("PostgreSQL init process complete; ready for start up."))
+    .withWaitStrategy(Wait.forLogMessage('PostgreSQL init process complete; ready for start up.'))
     .start();
 
   const mappedPort = container.getMappedPort(5432);
@@ -16,12 +16,12 @@ export async function setupTestContainer() {
   const password = container.getPassword();
 
   process.env.DATABASE_URL = `postgresql://${username}:${password}@${host}:${mappedPort}/${database}`;
-  execSync("npx prisma migrate deploy --preview-feature", { stdio: "inherit" });
+  execSync('npx prisma migrate deploy --preview-feature', { stdio: 'inherit' });
 }
 
 export async function teardownTestContainer() {
   if (container) {
-    execSync("npx prisma migrate reset --force");
+    execSync('npx prisma migrate reset --force');
     await container.stop();
   }
 }
