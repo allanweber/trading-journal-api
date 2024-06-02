@@ -1,8 +1,8 @@
-import { Direction, Entry, EntryType } from "@prisma/client";
-import { balanceEntry } from "../app/entries/balance";
+import { Direction, Entry, EntryType } from '@prisma/client';
+import { balanceEntry } from '../app/entries/balance';
 
-describe("balanceEntry", () => {
-  it("should calculate balance for Deposit entry", async () => {
+describe('balanceEntry', () => {
+  it('should calculate balance for Deposit entry', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.DEPOSIT,
       price: 1234.56,
@@ -16,7 +16,7 @@ describe("balanceEntry", () => {
     expect(result.grossResult).toBe(1234.56);
   });
 
-  it("should calculate balance for Withdrawal entry", async () => {
+  it('should calculate balance for Withdrawal entry', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.WITHDRAWAL,
       price: 1234.56,
@@ -30,7 +30,7 @@ describe("balanceEntry", () => {
     expect(result.grossResult).toBe(1234.56);
   });
 
-  it("should calculate balance for Dividend entry", async () => {
+  it('should calculate balance for Dividend entry', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.DIVIDEND,
       price: 45.67,
@@ -44,7 +44,7 @@ describe("balanceEntry", () => {
     expect(result.grossResult).toBe(45.67);
   });
 
-  it("should calculate balance for Taxes entry", async () => {
+  it('should calculate balance for Taxes entry', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.TAXES,
       price: 12.34,
@@ -58,7 +58,7 @@ describe("balanceEntry", () => {
     expect(result.grossResult).toBe(12.34);
   });
 
-  it("should calculate balance for Fees entry", async () => {
+  it('should calculate balance for Fees entry', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.FEES,
       price: 12.34,
@@ -72,7 +72,7 @@ describe("balanceEntry", () => {
     expect(result.grossResult).toBe(12.34);
   });
 
-  it("should not calculate balance for Trade because it is still open", async () => {
+  it('should not calculate balance for Trade because it is still open', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.STOCK,
       price: 500,
@@ -88,7 +88,7 @@ describe("balanceEntry", () => {
     expect(result.plannedRR).toBeUndefined();
   });
 
-  it("should calculate balance for winning Long Trade", async () => {
+  it('should calculate balance for winning Long Trade', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.STOCK,
       price: 465.78,
@@ -105,11 +105,11 @@ describe("balanceEntry", () => {
     expect(result.entryType).toBe(EntryType.STOCK);
     expect(result.result).toBe(431.63);
     expect(result.grossResult).toBe(441.18);
-    expect(result.returnPercentage).toBe(0.9267);
+    expect(result.returnPercentage).toBe(0.396);
     expect(result.plannedRR).toBeUndefined();
   });
 
-  it("should calculate PlannedRR for Long Trade", async () => {
+  it('should calculate PlannedRR for Long Trade', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.STOCK,
       price: 100,
@@ -128,7 +128,7 @@ describe("balanceEntry", () => {
     expect(result.returnPercentage).toBeUndefined();
   });
 
-  it("should calculate balance for losing Long Trade", async () => {
+  it('should calculate balance for losing Long Trade', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.STOCK,
       price: 543.21,
@@ -145,11 +145,12 @@ describe("balanceEntry", () => {
     expect(result.entryType).toBe(EntryType.STOCK);
     expect(result.result).toBe(-182.74);
     expect(result.grossResult).toBe(-173.19);
-    expect(result.returnPercentage).toBe(-0.3364);
+
+    expect(result.returnPercentage).toBe(-0.2156);
     expect(result.plannedRR).toBeUndefined();
   });
 
-  it("should calculate balance for winning Short Trade", async () => {
+  it('should calculate balance for winning Short Trade', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.STOCK,
       price: 598.78,
@@ -166,11 +167,11 @@ describe("balanceEntry", () => {
     expect(result.entryType).toBe(EntryType.STOCK);
     expect(result.result).toBe(433.49);
     expect(result.grossResult).toBe(443.04);
-    expect(result.returnPercentage).toBe(0.724);
+    expect(result.returnPercentage).toBe(0.232);
     expect(result.plannedRR).toBeUndefined();
   });
 
-  it("should calculate balance for loosing Short Trade", async () => {
+  it('should calculate balance for loosing Short Trade', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.STOCK,
       price: 879.54,
@@ -187,37 +188,27 @@ describe("balanceEntry", () => {
     expect(result.entryType).toBe(EntryType.STOCK);
     expect(result.result).toBe(-310.68);
     expect(result.grossResult).toBe(-301.13);
-    expect(result.returnPercentage).toBe(-0.3532);
+    expect(result.returnPercentage).toBe(-0.1413);
     expect(result.plannedRR).toBeUndefined();
   });
 
-  it("trying to balance not implemented entry type should throw an error", async () => {
+  it('trying to balance not implemented entry type should throw an error', async () => {
     const entry: Partial<Entry> = {
       entryType: EntryType.CRYPTO,
     };
 
-    await expect(balanceEntry(entry as Entry)).rejects.toThrow(
-      `Entry type ${entry.entryType} not supported`
-    );
+    await expect(balanceEntry(entry as Entry)).rejects.toThrow(`Entry type ${entry.entryType} not supported`);
 
     entry.entryType = EntryType.FOREX;
-    await expect(balanceEntry(entry as Entry)).rejects.toThrow(
-      `Entry type ${entry.entryType} not supported`
-    );
+    await expect(balanceEntry(entry as Entry)).rejects.toThrow(`Entry type ${entry.entryType} not supported`);
 
     entry.entryType = EntryType.FUTURES;
-    await expect(balanceEntry(entry as Entry)).rejects.toThrow(
-      `Entry type ${entry.entryType} not supported`
-    );
+    await expect(balanceEntry(entry as Entry)).rejects.toThrow(`Entry type ${entry.entryType} not supported`);
 
     entry.entryType = EntryType.INDEX;
-    await expect(balanceEntry(entry as Entry)).rejects.toThrow(
-      `Entry type ${entry.entryType} not supported`
-    );
+    await expect(balanceEntry(entry as Entry)).rejects.toThrow(`Entry type ${entry.entryType} not supported`);
 
     entry.entryType = EntryType.OPTION;
-    await expect(balanceEntry(entry as Entry)).rejects.toThrow(
-      `Entry type ${entry.entryType} not supported`
-    );
+    await expect(balanceEntry(entry as Entry)).rejects.toThrow(`Entry type ${entry.entryType} not supported`);
   });
 });

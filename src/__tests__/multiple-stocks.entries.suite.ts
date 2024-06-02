@@ -1,24 +1,24 @@
-import { Direction, EntryType, OrderStatus } from "@prisma/client";
-import express from "express";
-import request from "supertest";
-import { prismaClient } from "../loaders/prisma";
+import { Direction, EntryType, OrderStatus } from '@prisma/client';
+import express from 'express';
+import request from 'supertest';
+import { prismaClient } from '../loaders/prisma';
 
 export const multipleStockEntriesSuite = (app: express.Application) => {
   const createPortfolio = async () => {
     return await prismaClient.portfolio.create({
       data: {
-        user: "mail@mail.com",
-        name: "Portfolio Test",
-        description: "Portfolio Test Description",
+        user: 'mail@mail.com',
+        name: 'Portfolio Test',
+        description: 'Portfolio Test Description',
         startDate: new Date(2001, 1, 1),
         startBalance: 1000,
-        currency: "USD",
+        currency: 'USD',
         currentBalance: 1000,
       },
     });
   };
 
-  it("Create and finish multiple wining and losing stocks, balance became positive, negative and than positive again, delete all afterwards to reset the balance", async () => {
+  it('Create and finish multiple wining and losing stocks, balance became positive, negative and than positive again, delete all afterwards to reset the balance', async () => {
     const portfolio = await createPortfolio();
 
     const AAPL_response = await request(app)
@@ -28,7 +28,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.LONG,
       });
     expect(AAPL_response.status).toBe(201);
@@ -40,7 +40,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 200,
         size: 2,
         entryType: EntryType.STOCK,
-        symbol: "MSFT",
+        symbol: 'MSFT',
         direction: Direction.SHORT,
       });
     expect(MSFT_response.status).toBe(201);
@@ -52,7 +52,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 500,
         size: 2,
         entryType: EntryType.STOCK,
-        symbol: "IBOV",
+        symbol: 'IBOV',
         direction: Direction.LONG,
       });
     expect(IBOV_response.status).toBe(201);
@@ -64,7 +64,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 3,
         entryType: EntryType.STOCK,
-        symbol: "MGLU",
+        symbol: 'MGLU',
         direction: Direction.SHORT,
       });
     expect(MGLU_response.status).toBe(201);
@@ -103,7 +103,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(close_MSFT_response.body.exitPrice).toBe(100);
     expect(close_MSFT_response.body.result).toBe(200);
     expect(close_MSFT_response.body.grossResult).toBe(200);
-    expect(close_MSFT_response.body.returnPercentage).toBe(1);
+    expect(close_MSFT_response.body.returnPercentage).toBe(0.5);
 
     //Check Balance after closing MSFT
     const updatedPortfolioAfterMSFT = await prismaClient.portfolio.findUnique({
@@ -125,7 +125,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(close_IBOV_response.body.exitPrice).toBe(100);
     expect(close_IBOV_response.body.result).toBe(-800);
     expect(close_IBOV_response.body.grossResult).toBe(-800);
-    expect(close_IBOV_response.body.returnPercentage).toBe(-1.6);
+    expect(close_IBOV_response.body.returnPercentage).toBe(-0.8);
 
     //Check Balance after closing MSFT
     const updatedPortfolioAfterIBOV = await prismaClient.portfolio.findUnique({
@@ -147,7 +147,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(close_MGLU_response.body.exitPrice).toBe(300);
     expect(close_MGLU_response.body.result).toBe(-600);
     expect(close_MGLU_response.body.grossResult).toBe(-600);
-    expect(close_MGLU_response.body.returnPercentage).toBe(-6);
+    expect(close_MGLU_response.body.returnPercentage).toBe(-2);
 
     //Check Balance after closing MSFT
     const updatedPortfolioAfterMGLU = await prismaClient.portfolio.findUnique({
@@ -219,7 +219,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(balanceAfterDeleteIBOV.currentBalance).toBe(1000);
   });
 
-  it("When closing trades it is possible to inform the costs again, if not informed do not change the previous costs", async () => {
+  it('When closing trades it is possible to inform the costs again, if not informed do not change the previous costs', async () => {
     const portfolio = await createPortfolio();
     const tradeWithCosts = await request(app)
       .post(`/api/v1/portfolios/${portfolio.id}/entries`)
@@ -228,7 +228,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.LONG,
         costs: 10,
       });
@@ -253,7 +253,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.LONG,
       });
     expect(tradeWithoutCosts.status).toBe(201);
@@ -277,7 +277,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "AAPL",
+        symbol: 'AAPL',
         direction: Direction.LONG,
       });
     expect(tradeWithoutCosts2.status).toBe(201);
@@ -303,7 +303,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
     expect(balance.currentBalance).toBe(1280);
   });
 
-  it("Filter queries by Symbol, Entry Type, Status and Direction", async () => {
+  it('Filter queries by Symbol, Entry Type, Status and Direction', async () => {
     const portfolio = await createPortfolio();
     const shortOpen = await request(app)
       .post(`/api/v1/portfolios/${portfolio.id}/entries`)
@@ -312,7 +312,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "SHORT_OPEN",
+        symbol: 'SHORT_OPEN',
         direction: Direction.SHORT,
       });
     expect(shortOpen.status).toBe(201);
@@ -323,7 +323,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 100,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "LONG_OPEN",
+        symbol: 'LONG_OPEN',
         direction: Direction.LONG,
       });
     expect(LongOpen.status).toBe(201);
@@ -335,7 +335,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 1,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "LONG_WIN",
+        symbol: 'LONG_WIN',
         direction: Direction.LONG,
       });
     expect(longWin.status).toBe(201);
@@ -354,7 +354,7 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 1,
         size: 1,
         entryType: EntryType.STOCK,
-        symbol: "SHOT_LOSS",
+        symbol: 'SHOT_LOSS',
         direction: Direction.SHORT,
       });
     expect(shortLoss.status).toBe(201);
@@ -373,41 +373,41 @@ export const multipleStockEntriesSuite = (app: express.Application) => {
         price: 1,
         size: 1,
         entryType: EntryType.DIVIDEND,
-        symbol: "DIVIDEND",
+        symbol: 'DIVIDEND',
       });
     expect(dividend.status).toBe(201);
 
     const queryOpen = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?status=OPEN`);
     expect(queryOpen.status).toBe(200);
     expect(queryOpen.body.data.length).toBe(2);
-    expect(queryOpen.body.data[0].symbol).toBe("SHORT_OPEN");
-    expect(queryOpen.body.data[1].symbol).toBe("LONG_OPEN");
+    expect(queryOpen.body.data[0].symbol).toBe('SHORT_OPEN');
+    expect(queryOpen.body.data[1].symbol).toBe('LONG_OPEN');
 
     const queryWin = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?query=WIN`);
     expect(queryWin.status).toBe(200);
     expect(queryWin.body.data.length).toBe(1);
-    expect(queryWin.body.data[0].symbol).toBe("LONG_WIN");
+    expect(queryWin.body.data[0].symbol).toBe('LONG_WIN');
 
     const queryLoss = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?query=LOSS`);
     expect(queryLoss.status).toBe(200);
     expect(queryLoss.body.data.length).toBe(1);
-    expect(queryLoss.body.data[0].symbol).toBe("SHOT_LOSS");
+    expect(queryLoss.body.data[0].symbol).toBe('SHOT_LOSS');
 
     const queryDividend = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?type=DIVIDEND`);
     expect(queryDividend.status).toBe(200);
     expect(queryDividend.body.data.length).toBe(1);
-    expect(queryDividend.body.data[0].symbol).toBe("DIVIDEND");
+    expect(queryDividend.body.data[0].symbol).toBe('DIVIDEND');
 
     const queryShort = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?direction=SHORT`);
     expect(queryShort.status).toBe(200);
     expect(queryShort.body.data.length).toBe(2);
-    expect(queryShort.body.data[0].symbol).toBe("SHORT_OPEN");
-    expect(queryShort.body.data[1].symbol).toBe("SHOT_LOSS");
+    expect(queryShort.body.data[0].symbol).toBe('SHORT_OPEN');
+    expect(queryShort.body.data[1].symbol).toBe('SHOT_LOSS');
 
     const queryLong = await request(app).get(`/api/v1/portfolios/${portfolio.id}/entries?direction=LONG`);
     expect(queryLong.status).toBe(200);
     expect(queryLong.body.data.length).toBe(2);
-    expect(queryLong.body.data[0].symbol).toBe("LONG_OPEN");
-    expect(queryLong.body.data[1].symbol).toBe("LONG_WIN");
+    expect(queryLong.body.data[0].symbol).toBe('LONG_OPEN');
+    expect(queryLong.body.data[1].symbol).toBe('LONG_WIN');
   });
 };

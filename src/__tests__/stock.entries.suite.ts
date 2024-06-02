@@ -191,7 +191,7 @@ export const stockEntriesSuite = (app: express.Application) => {
     expect(closeResponse.body.exitPrice).toBe(300);
     expect(closeResponse.body.result).toBe(190);
     expect(closeResponse.body.grossResult).toBe(200);
-    expect(closeResponse.body.returnPercentage).toBe(0.95);
+    expect(closeResponse.body.returnPercentage).toBe(0.475);
     expect(closeResponse.body.plannedRR).toBe(2);
 
     //Balance changed and there are two entries in balance table

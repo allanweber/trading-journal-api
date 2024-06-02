@@ -1,10 +1,11 @@
-import { Direction, Entry, EntryType, OrderStatus } from "@prisma/client";
+import { Direction, Entry, EntryType, OrderStatus } from '@prisma/client';
 
 export const balanceEntry = async (entry: Entry) => {
   if (entry.entryType === EntryType.STOCK) {
     entry = balanceTrade(entry);
     if (entry.result) {
-      entry.returnPercentage = parseFloat((entry.result / entry.price).toFixed(4));
+      const investedAmount = entry.price * entry.size;
+      entry.returnPercentage = parseFloat((entry.result / investedAmount).toFixed(4));
     }
   } else if (
     entry.entryType === EntryType.OPTION ||
